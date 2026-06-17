@@ -65,6 +65,17 @@ tra notazione anglosassone (C, D, E…) e **italiana** (Do, Re, Mi…). È solo
 trasposizione e diagrammi restano corretti. La conversione tocca griglia accordi,
 tonalità, chip della sidebar, popover e titoli dei diagrammi.
 
+## Modalità Live (tablet sul leggìo)
+Il pulsante **🎤 Live** apre una vista da palco, pensata per tablet:
+- **menu a scomparsa** a qualsiasi larghezza (anche su tablet), con overlay;
+- **accordi molto grandi** e ad alto contrasto, con **A− / A+** per regolare la dimensione;
+- **navigazione scaletta** con **◀ / ▶** (scorre i brani della scaletta selezionata, o dell'intera libreria, in modo ciclico);
+- trasposizione **− / +** e toggle notazione **C / Do** sempre a portata di pollice;
+- i **diagrammi sono nascosti** per massima leggibilità;
+- lo **schermo resta acceso** durante il live (Wake Lock, dove supportato dal browser).
+
+Si esce con **✕**. Su tablet/mobile la sidebar è comunque a scomparsa (soglia ≤1024px) anche fuori dalla modalità Live.
+
 ## Modificare accordi e creare brani (in-app)
 Dalla scheda di un brano, **✏️ Modifica** apre l'editor: puoi correggere gli accordi
 (ogni riga = una misura, più accordi separati da spazio), rinominare/riordinare/aggiungere

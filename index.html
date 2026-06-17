@@ -11,6 +11,7 @@
   --border:#2a2a2a;--border2:#333;
   --text:#e8e8e8;--text2:#a0a0a0;--text3:#666;
   --accent:#c8a45a;--accent2:#e8c27a;
+  --chord-fs:16px;
   /* colori sezione */
   --s-intro:#3a3320;--s-verse:#1e2a3a;--s-chorus:#2a1e3a;--s-bridge:#1e3a2a;
   --s-solo:#3a1e1e;--s-outro:#2a2a2a;--s-pre:#2a2a1a;--s-inst:#1a2a2a;
@@ -59,9 +60,9 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,-ap
 .bars{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
 .bar{background:var(--bg2);border:1px solid var(--border2);border-radius:5px;min-height:46px;display:flex;align-items:center;justify-content:center;gap:9px;padding:6px 4px;flex-wrap:wrap}
 .bar.empty{background:repeating-linear-gradient(45deg,var(--bg),var(--bg) 6px,var(--bg2) 6px,var(--bg2) 12px);opacity:.5}
-.chord{font-size:16px;font-weight:600;color:var(--accent2);cursor:pointer;border-bottom:1px dotted transparent;transition:all .1s}
+.chord{font-size:var(--chord-fs,16px);font-weight:600;color:var(--accent2);cursor:pointer;border-bottom:1px dotted transparent;transition:color .1s}
 .chord:hover{color:#fff;border-bottom-color:var(--accent)}
-.chord sup{font-size:10px}
+.chord sup{font-size:.6em}
 
 /* CHORD STRIP (all diagrams) */
 .diag-section{margin-top:8px}
@@ -105,6 +106,31 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,-ap
 #overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:300}
 #overlay.open{display:block}
 
+/* ===== LIVE / PERFORMANCE MODE ===== */
+#livebar{display:none}
+body.live{flex-direction:column;overflow:hidden}
+body.live #topbar{display:none}
+/* sidebar a scomparsa a QUALSIASI larghezza in modalità live */
+body.live #sidebar{position:fixed;top:0;left:0;bottom:0;z-index:400;transform:translateX(-100%);width:300px;transition:transform .25s ease}
+body.live #sidebar.open{transform:translateX(0)}
+body.live #sidebar-header{padding-top:18px}
+body.live #main{flex:1;overflow-y:auto;max-width:none;padding:0;width:100%}
+body.live .song-header,body.live .controls,body.live .diag-section{display:none}
+body.live .section{margin:0 14px 26px}
+body.live .section:first-of-type{margin-top:14px}
+body.live .section-label{font-size:14px;padding:5px 14px;margin-bottom:12px}
+body.live .bars{gap:10px}
+body.live .bar{min-height:74px;background:#000;border-color:#3a3a3a}
+body.live .chord{color:#fff;font-weight:700}
+body.live #livebar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;position:sticky;top:0;z-index:120;
+  padding:10px 12px;background:rgba(10,10,10,.97);border-bottom:1px solid var(--border)}
+#livebar .lb-title{font-size:17px;font-weight:700;color:var(--accent2);flex:1;min-width:90px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#livebar .lb-key{font-size:21px;font-weight:700;color:var(--accent);min-width:60px;text-align:center}
+.lb-btn{font-size:19px;line-height:1;padding:11px 15px;border-radius:10px;background:var(--bg3);border:1px solid var(--border2);color:var(--text);cursor:pointer;user-select:none;min-width:50px;text-align:center;-webkit-tap-highlight-color:transparent}
+.lb-btn:active{background:var(--bg4)}
+.lb-btn.exit{color:#e88;border-color:#7a3a3a}
+.lb-btn.on{background:var(--accent);border-color:var(--accent);color:#1a1a1a}
+
 @media print{
   body{display:block;height:auto;background:#fff;color:#000}
   #sidebar,#topbar,#overlay,.controls .inst-btn,#popover{display:none!important}
@@ -114,10 +140,11 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,-ap
   .section-label{color:#000!important;background:#eee!important}
 }
 
-@media(max-width:760px){
-  body{flex-direction:column;overflow:hidden}
+/* tablet + mobile: menu a scomparsa con topbar */
+@media(max-width:1024px){
+  body:not(.live){flex-direction:column;overflow:hidden}
   #topbar{display:flex}
-  #sidebar{position:fixed;top:0;left:0;bottom:0;z-index:400;transform:translateX(-100%);width:280px;transition:transform .25s ease}
+  #sidebar{position:fixed;top:0;left:0;bottom:0;z-index:400;transform:translateX(-100%);width:300px;transition:transform .25s ease}
   #sidebar.open{transform:translateX(0)}
   #sidebar-header{padding-top:50px}
   #main{flex:1;overflow-y:auto;padding:14px 14px 50px;width:100%}
@@ -133,6 +160,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,-ap
     <span></span><span></span><span></span>
   </button>
   <span id="topbar-title">ChordLab</span>
+  <span class="btn" style="margin-left:auto" onclick="toggleLive()">🎤 Live</span>
 </div>
 <div id="overlay" onclick="closeMenu()"></div>
 
@@ -344,6 +372,7 @@ function render(){
     '<div class="ctl-group" style="margin-left:auto"><span class="ctl-label">Strumento</span>'+instBtns+'</div>'+
     '<span class="btn" onclick="toggleAll()">'+(state.showAll?'Nascondi':'Mostra')+' diagrammi</span>'+
     '<span class="btn" onclick="edEdit()">✏️ Modifica</span>'+
+    '<span class="btn" onclick="toggleLive()">🎤 Live</span>'+
     '<span class="btn" onclick="window.print()">🖨 Stampa</span>'+
   '</div>';
 
@@ -360,8 +389,8 @@ function render(){
     html += '</div></div>';
   });
 
-  // all-chords diagram strip
-  if(state.showAll){
+  // all-chords diagram strip (nascosto in modalità Live)
+  if(state.showAll && !state.live){
     var chords = uniqueChords(s);
     html += '<div class="diag-section"><div class="section-title">Diagrammi — '+INST.label(state.instrument)+' · '+chords.length+' accordi</div><div class="diag-grid">';
     chords.forEach(function(c){
@@ -373,8 +402,66 @@ function render(){
     html += '</div></div>';
   }
 
+  if(state.live){ html = liveBarHTML(s) + html; }
   document.getElementById('content').innerHTML = html;
 }
+
+/* ================= LIVE / PERFORMANCE MODE ================= */
+function liveBarHTML(s){
+  return '<div id="livebar">'+
+    '<span class="lb-btn" onclick="toggleMenu()" title="Elenco brani">☰</span>'+
+    '<span class="lb-btn" onclick="liveNav(-1)" title="Brano precedente">◀</span>'+
+    '<span class="lb-title">'+s.title+'</span>'+
+    '<span class="lb-btn" onclick="bump(-1)" title="Abbassa">−</span>'+
+    '<span class="lb-key">'+locKey(curKey(s))+'</span>'+
+    '<span class="lb-btn" onclick="bump(1)" title="Alza">+</span>'+
+    '<span class="lb-btn'+(state.italian?' on':'')+'" onclick="toggleNotation()" title="Notazione note">'+(state.italian?'Do':'C')+'</span>'+
+    '<span class="lb-btn" onclick="setChordFs(-3)" title="Riduci testo">A−</span>'+
+    '<span class="lb-btn" onclick="setChordFs(3)" title="Ingrandisci testo">A+</span>'+
+    '<span class="lb-btn" onclick="liveNav(1)" title="Brano successivo">▶</span>'+
+    '<span class="lb-btn exit" onclick="toggleLive()" title="Esci da Live">✕</span>'+
+  '</div>';
+}
+
+function indexOfId(list, id){ for(var i=0;i<list.length;i++){ if(list[i].id===id) return i; } return -1; }
+// Avanti/indietro nella scaletta corrente (o nell'intera libreria), ciclico.
+function liveNav(dir){
+  var list = currentSongList(); if(!list.length) return;
+  var i = indexOfId(list, state.sel);
+  if(i < 0){ pick(list[0].id); return; }
+  pick(list[(i + dir + list.length) % list.length].id);
+}
+
+function applyChordFs(){ document.documentElement.style.setProperty('--chord-fs', (state.chordFs||34)+'px'); }
+function setChordFs(d){ state.chordFs = Math.max(16, Math.min(96, (state.chordFs||34)+d)); applyChordFs(); }
+
+/* mantiene lo schermo acceso durante il live (dove supportato) */
+var _wake = null;
+function requestWake(){
+  try { if(navigator.wakeLock && navigator.wakeLock.request){
+    navigator.wakeLock.request('screen').then(function(w){ _wake = w; }).catch(function(){});
+  } } catch(e){}
+}
+function releaseWake(){ try { if(_wake && _wake.release) _wake.release(); } catch(e){} _wake = null; }
+
+function toggleLive(){
+  state.live = !state.live;
+  document.body.classList.toggle('live', state.live);
+  if(state.live){
+    if(!state.chordFs) state.chordFs = 34;
+    applyChordFs();
+    closeMenu();
+    requestWake();
+    if(!state.sel){ var l=currentSongList(); if(l.length) state.sel=l[0].id; }
+  } else {
+    document.documentElement.style.removeProperty('--chord-fs');
+    releaseWake();
+  }
+  render();
+}
+document.addEventListener('visibilitychange', function(){
+  if(state.live && document.visibilityState === 'visible') requestWake();
+});
 
 /* ================= EDITOR ================= */
 var edModel = null; // brano in modifica (clone di lavoro)
