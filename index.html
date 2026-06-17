@@ -24,6 +24,8 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,-ap
 #sidebar-header p{font-size:11px;color:var(--text3);margin-top:3px}
 #search{width:100%;margin-top:11px;padding:8px 11px;background:var(--bg);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:13px;outline:none}
 #search:focus{border-color:var(--accent)}
+#setlist{width:100%;margin-top:11px;padding:7px 9px;background:var(--bg);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:12px;outline:none;cursor:pointer}
+#setlist:focus{border-color:var(--accent)}
 #song-list{overflow-y:auto;flex:1}
 .song-item{display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .1s}
 .song-item:hover{background:var(--bg3)}
@@ -117,6 +119,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,-ap
   <div id="sidebar-header">
     <h1>🎼 ChordLab</h1>
     <p id="lib-count">— brani</p>
+    <select id="setlist" title="Scegli una scaletta"></select>
     <input id="search" type="search" placeholder="Cerca brano, artista, tag…" autocomplete="off">
   </div>
   <div id="song-list"></div>
@@ -139,10 +142,30 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,-ap
 <script>
 'use strict';
 var SONGS = window.SONGS || [];
+var SETLISTS = window.SETLISTS || [];
 var E = window.ChordEngine;
 var INST = window.Instruments;
 
-var state = { sel: null, transpose: 0, instrument: 'guitar', showAll: true, filter: '' };
+var state = { sel: null, transpose: 0, instrument: 'guitar', showAll: true, filter: '', setlist: '', italian: false };
+
+/* ---- lookup helpers ---- */
+function songById(id){ for(var i=0;i<SONGS.length;i++){ if(SONGS[i].id===id) return SONGS[i]; } return null; }
+function setlistById(id){ for(var i=0;i<SETLISTS.length;i++){ if(SETLISTS[i].id===id) return SETLISTS[i]; } return null; }
+
+// Songs shown for the current setlist (ordered), or the whole library.
+function currentSongList(){
+  var sl = state.setlist ? setlistById(state.setlist) : null;
+  if(!sl) return SONGS.slice();
+  var out = [];
+  sl.songs.forEach(function(id){ var s = songById(id); if(s) out.push(s); });
+  return out;
+}
+
+/* ---- note-notation localization (display only) ---- */
+function locNote(n){ return state.italian ? E.noteToItalian(n) : n; }
+function locKey(k){ return state.italian ? E.keyToItalian(k) : k; }
+function locChord(sym){ return state.italian ? E.chordToItalian(sym) : sym; }
+function toggleNotation(){ state.italian = !state.italian; render(); }
 
 /* ---- section color mapping ---- */
 function sectionColor(name){
@@ -176,11 +199,12 @@ function dispChord(s, sym){
 /* ---- pretty chord HTML (superscript the suffix) ---- */
 function chordHTML(sym){
   var p = E.parse(sym);
-  if(!p) return '<span class="chord" data-sym="'+sym+'">'+sym+'</span>';
-  var root = p.root + (p.bass ? '' : '');
+  if(!p) return '<span class="chord" data-sym="'+sym+'">'+locChord(sym)+'</span>';
+  var root = locNote(p.root);
   var suf = p.suffix || '';
-  var bass = p.bass ? '/'+p.bass : '';
+  var bass = p.bass ? '/'+locNote(p.bass) : '';
   var inner = root + (suf ? '<sup>'+suf+'</sup>' : '') + bass;
+  // data-sym keeps the English symbol so the engine/diagrams keep working.
   return '<span class="chord" data-sym="'+sym.replace(/"/g,'')+'">'+inner+'</span>';
 }
 
@@ -200,14 +224,27 @@ function uniqueChords(s){
 }
 
 /* ================= SIDEBAR ================= */
+function buildSetlistSelect(){
+  var sel = document.getElementById('setlist');
+  var opts = '<option value="">Tutta la libreria ('+SONGS.length+')</option>';
+  SETLISTS.forEach(function(sl){
+    opts += '<option value="'+sl.id+'">'+sl.name+' ('+sl.songs.length+')</option>';
+  });
+  sel.innerHTML = opts;
+  sel.value = state.setlist;
+}
+
 function buildSidebar(){
   var f = state.filter.toLowerCase().trim();
-  var list = SONGS.filter(function(s){
+  var base = currentSongList();
+  var list = base.filter(function(s){
     if(!f) return true;
     var hay = (s.title+' '+s.artist+' '+(s.key||'')+' '+(s.tags||[]).join(' ')).toLowerCase();
     return hay.indexOf(f) >= 0;
   });
-  document.getElementById('lib-count').textContent = SONGS.length + ' brani in libreria';
+  document.getElementById('lib-count').textContent = state.setlist
+    ? (list.length + (f ? ' / '+base.length : '') + ' brani in scaletta')
+    : (SONGS.length + ' brani in libreria');
   var el = document.getElementById('song-list');
   if(!list.length){ el.innerHTML = '<div id="no-results">Nessun brano trovato per “'+f+'”</div>'; return; }
   el.innerHTML = list.map(function(s){
@@ -215,7 +252,7 @@ function buildSidebar(){
     return '<div class="song-item'+active+'" onclick="pick(\''+s.id+'\')">'+
       '<div><div class="song-name">'+s.title+'</div>'+
       '<div class="song-artist-sidebar">'+s.artist+(s.year?' · '+s.year:'')+'</div></div>'+
-      '<span class="song-key-chip">'+s.key+'</span></div>';
+      '<span class="song-key-chip">'+locKey(s.key)+'</span></div>';
   }).join('');
 }
 
@@ -248,10 +285,12 @@ function render(){
   '<div class="controls">'+
     '<div class="ctl-group"><span class="ctl-label">Tonalità</span>'+
       '<span class="btn sm" onclick="bump(-1)">−</span>'+
-      '<span class="key-display">'+curKey(s)+'</span>'+
+      '<span class="key-display">'+locKey(curKey(s))+'</span>'+
       '<span class="btn sm" onclick="bump(1)">+</span>'+
       '<span class="btn" onclick="resetKey()">Reset'+tShow+'</span></div>'+
     capo+
+    '<div class="ctl-group"><span class="ctl-label">Note</span>'+
+      '<span class="btn'+(state.italian?' inst-btn active':'')+'" onclick="toggleNotation()">'+(state.italian?'Do Re Mi':'C D E')+'</span></div>'+
     '<div class="ctl-group" style="margin-left:auto"><span class="ctl-label">Strumento</span>'+instBtns+'</div>'+
     '<span class="btn" onclick="toggleAll()">'+(state.showAll?'Nascondi':'Mostra')+' diagrammi</span>'+
     '<span class="btn" onclick="window.print()">🖨 Stampa</span>'+
@@ -276,7 +315,8 @@ function render(){
     html += '<div class="diag-section"><div class="section-title">Diagrammi — '+INST.label(state.instrument)+' · '+chords.length+' accordi</div><div class="diag-grid">';
     chords.forEach(function(c){
       var svg='';
-      try { svg = INST.render(state.instrument, c, {}); } catch(e){ svg='<div style="color:#a55;font-size:11px">n/d</div>'; }
+      var opts = state.italian ? {label: E.chordToItalian(c)} : {};
+      try { svg = INST.render(state.instrument, c, opts); } catch(e){ svg='<div style="color:#a55;font-size:11px">n/d</div>'; }
       html += '<div class="diag-card">'+svg+'</div>';
     });
     html += '</div></div>';
@@ -288,13 +328,14 @@ function render(){
 /* ================= POPOVER (click chord -> diagram) ================= */
 function showPopover(sym, x, y){
   var pop = document.getElementById('popover');
-  pop.querySelector('.pop-name').textContent = sym;
-  var svg=''; try{ svg = INST.render(state.instrument, sym, {}); }catch(e){ svg='voicing n/d'; }
+  var label = locChord(sym);
+  pop.querySelector('.pop-name').textContent = label;
+  var svg=''; try{ svg = INST.render(state.instrument, sym, state.italian?{label:label}:{}); }catch(e){ svg='voicing n/d'; }
   pop.querySelector('.pop-svg').innerHTML = svg;
   var p = E.parse(sym);
   if(p){
     var useFlats = E.keyUsesFlats(curKeySafe());
-    pop.querySelector('.pop-notes').textContent = 'Note: ' + p.pcs.map(function(pc){return E.noteName(pc, useFlats);}).join(' · ');
+    pop.querySelector('.pop-notes').textContent = 'Note: ' + p.pcs.map(function(pc){return locNote(E.noteName(pc, useFlats));}).join(' · ');
   } else { pop.querySelector('.pop-notes').textContent=''; }
   pop.classList.add('show');
   // position
@@ -313,9 +354,12 @@ document.addEventListener('click', function(ev){
   if(!ev.target.closest || !ev.target.closest('#popover')) closePopover();
 });
 
-/* ================= SEARCH ================= */
+/* ================= SEARCH + SETLIST ================= */
 document.getElementById('search').addEventListener('input', function(e){
   state.filter = e.target.value; buildSidebar();
+});
+document.getElementById('setlist').addEventListener('change', function(e){
+  state.setlist = e.target.value; buildSidebar();
 });
 
 /* ================= MOBILE MENU ================= */
@@ -323,6 +367,7 @@ function toggleMenu(){ var sb=document.getElementById('sidebar'), ov=document.ge
 function closeMenu(){ document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('open'); }
 
 /* ================= INIT ================= */
+buildSetlistSelect();
 buildSidebar();
 if(SONGS.length){ pick(SONGS[0].id); }
 </script>

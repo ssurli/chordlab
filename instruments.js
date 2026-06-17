@@ -444,7 +444,7 @@
     // Title (chord name)
     parts.push('<text x="' + (width / 2) + '" y="16" fill="' + COL.text +
       '" font-size="14" font-weight="600" text-anchor="middle">' +
-      esc(sym) + '</text>');
+      esc((opts && opts.label) || sym) + '</text>');
 
     // Nut (thick) only if starting at fret 1
     if (startFret === 1) {
@@ -556,7 +556,7 @@
       '" height="' + height + '" viewBox="0 0 ' + width + ' ' + height +
       '" font-family="' + FONT + '">');
     parts.push('<text x="' + (width / 2) + '" y="16" fill="' + COL.text +
-      '" font-size="14" font-weight="600" text-anchor="middle">' + esc(sym) + '</text>');
+      '" font-size="14" font-weight="600" text-anchor="middle">' + esc((opts && opts.label) || sym) + '</text>');
 
     function fillFor(pc) {
       if (pc === rootPc) return COL.rootHi;
@@ -631,7 +631,7 @@
         var w = (opts && opts.width) || 140;
         return '<svg xmlns="http://www.w3.org/2000/svg" width="' + w + '" height="40" ' +
           'font-family="' + FONT + '"><text x="' + (w / 2) + '" y="24" fill="' + COL.text +
-          '" font-size="12" text-anchor="middle">' + esc(sym || '') + ' — voicing n/d</text></svg>';
+          '" font-size="12" text-anchor="middle">' + esc((opts && opts.label) || sym || '') + ' — voicing n/d</text></svg>';
       }
     }
   };

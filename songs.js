@@ -425,5 +425,326 @@ window.SONGS = [
       { name: 'Verse', bars: ['C', 'Dm', 'Em', 'F', 'G', 'G'] },
       { name: 'Chorus', bars: ['F', 'Em', 'Dm', 'C', 'F', 'Em', 'Dm', 'C', 'F', 'G'] }
     ]
+  },
+
+  // ── Seconda scaletta ─────────────────────────────────────────────────
+  {
+    id: 'la-flaca', title: 'La Flaca', artist: 'Jarabe de Palo', year: '1996', key: 'Am', capo: 0,
+    tags: ['latin', 'pop', '90s'],
+    sections: [
+      { name: 'Verse', bars: ['Am', 'G', 'F', 'E'] },
+      { name: 'Chorus', bars: ['Dm', 'Am', 'E', 'Am'] }
+    ]
+  },
+  {
+    id: 'volevo-essere-un-duro', title: 'Volevo Essere un Duro', artist: 'Lucio Corsi', year: '2025', key: 'C', capo: 0,
+    tags: ['pop', 'italiano', 'da-verificare'],
+    sections: [
+      { name: 'Verse', bars: ['C', 'Am', 'F', 'G'] },
+      { name: 'Chorus', bars: ['F', 'G', 'C', 'Am'] }
+    ]
+  },
+  {
+    id: 'angels', title: 'Angels', artist: 'Robbie Williams', year: '1997', key: 'E', capo: 0,
+    tags: ['pop', '90s', 'ballad'],
+    sections: [
+      { name: 'Verse', bars: ['E', 'B', 'C#m', 'A'] },
+      { name: 'Pre-Chorus', bars: ['A', 'B', 'E', 'E'] },
+      { name: 'Chorus', bars: ['E', 'A', 'E', 'A', 'B', 'E'] }
+    ]
+  },
+  {
+    id: 'prendila-cosi', title: 'Prendila Così', artist: 'Max Pezzali', year: '2004', key: 'G', capo: 0,
+    tags: ['pop', 'italiano', 'da-verificare'],
+    sections: [
+      { name: 'Verse', bars: ['G', 'Em', 'C', 'D'] },
+      { name: 'Chorus', bars: ['C', 'D', 'G', 'Em', 'C', 'D', 'G'] }
+    ]
+  },
+  {
+    id: 'losing-my-religion', title: 'Losing My Religion', artist: 'R.E.M.', year: '1991', key: 'Am', capo: 0,
+    tags: ['rock', '90s', 'alternative'],
+    sections: [
+      { name: 'Verse', bars: ['Am', 'Em', 'Am', 'Em'] },
+      { name: 'Chorus', bars: ['Dm', 'G', 'Am', 'Am', 'Dm', 'G', 'F', 'F'] }
+    ]
+  },
+  {
+    id: 'il-mare-d-inverno', title: "Il Mare d'Inverno", artist: 'Loredana Bertè', year: '1983', key: 'Em', capo: 0,
+    tags: ['pop', 'italiano', 'da-verificare'],
+    sections: [
+      { name: 'Verse', bars: ['Em', 'C', 'G', 'D'] },
+      { name: 'Chorus', bars: ['C', 'D', 'Em', 'C', 'D', 'Em'] }
+    ]
+  },
+  {
+    id: 'vivere', title: 'Vivere', artist: 'Vasco Rossi', year: '1993', key: 'D', capo: 0,
+    tags: ['rock', 'italiano', 'da-verificare'],
+    sections: [
+      { name: 'Verse', bars: ['D', 'A', 'Bm', 'G'] },
+      { name: 'Chorus', bars: ['G', 'A', 'D', 'Bm', 'G', 'A', 'D'] }
+    ]
+  },
+  {
+    id: '50-mila', title: '50 Mila', artist: 'Tananai', year: '2025', key: 'C', capo: 0,
+    tags: ['pop', 'italiano', 'da-verificare'],
+    sections: [
+      { name: 'Verse', bars: ['C', 'G', 'Am', 'F'] },
+      { name: 'Chorus', bars: ['F', 'C', 'G', 'Am', 'F', 'C', 'G'] }
+    ]
+  },
+  {
+    id: 'every-breath-you-take', title: 'Every Breath You Take', artist: 'The Police', year: '1983', key: 'G', capo: 0,
+    tags: ['rock', '80s', 'classic'],
+    sections: [
+      { name: 'Verse', bars: ['G', 'Em', 'C', 'D', 'G', 'Em', 'C', 'D'] },
+      { name: 'Bridge', bars: ['C', 'C', 'G', 'G', 'A', 'A', 'D', 'D'] }
+    ]
+  },
+  {
+    id: 'dimmi-di-si', title: 'Dimmi di Sì', artist: 'Alex Britti', year: '1998', key: 'C', capo: 0,
+    tags: ['pop', 'italiano', 'da-verificare'],
+    sections: [
+      { name: 'Verse', bars: ['C', 'Am', 'F', 'G'] },
+      { name: 'Chorus', bars: ['F', 'G', 'C', 'C'] }
+    ]
+  },
+  {
+    id: 'la-mia-signorina', title: 'La Mia Signorina', artist: 'Neffa', year: '2006', key: 'Am', capo: 0,
+    tags: ['pop', 'italiano', 'da-verificare'],
+    sections: [
+      { name: 'Verse', bars: ['Am', 'D', 'G', 'C'] },
+      { name: 'Chorus', bars: ['F', 'G', 'C', 'Am'] }
+    ]
+  },
+  {
+    id: 'laura-non-ce-uomo-ragno', title: "Laura Non C'è / Hanno Ucciso l'Uomo Ragno", artist: 'Nek / 883', year: '1997', key: 'Bm', capo: 0,
+    tags: ['pop', 'italiano', 'medley', 'da-verificare'],
+    sections: [
+      { name: "Laura Non C'è", bars: ['Bm', 'G', 'D', 'A'] },
+      { name: "Hanno Ucciso l'Uomo Ragno", bars: ['Am', 'F', 'C', 'G'] }
+    ]
+  },
+  {
+    id: 'figli-delle-stelle', title: 'Figli delle Stelle', artist: 'Alan Sorrenti', year: '1977', key: 'Am', capo: 0,
+    tags: ['disco', 'italiano', 'da-verificare'],
+    sections: [
+      { name: 'Verse', bars: ['Am', 'G', 'F', 'E'] },
+      { name: 'Chorus', bars: ['Am', 'G', 'F', 'E'] }
+    ]
+  },
+  {
+    id: 'crazy-little-thing-called-love', title: 'Crazy Little Thing Called Love', artist: 'Queen', year: '1979', key: 'D', capo: 0,
+    tags: ['rock', '70s', 'classic'],
+    sections: [
+      { name: 'Verse', bars: ['D', 'G', 'C', 'G', 'D'] },
+      { name: 'Chorus', bars: ['Bb', 'C', 'D', 'Bb', 'C', 'D'] },
+      { name: 'Bridge', bars: ['G', 'C', 'G', 'D'] }
+    ]
+  },
+  {
+    id: 'yes-i-know-my-way', title: 'Yes I Know My Way', artist: 'Pino Daniele', year: '1981', key: 'Em', capo: 0,
+    tags: ['pop', 'italiano', 'da-verificare'],
+    sections: [
+      { name: 'Verse', bars: ['Em', 'A', 'Em', 'A'] },
+      { name: 'Chorus', bars: ['C', 'D', 'G', 'Em', 'C', 'D'] }
+    ]
+  },
+  {
+    id: 'disperato-erotico-stomp', title: 'Disperato Erotico Stomp', artist: 'Lucio Dalla', year: '1977', key: 'E', capo: 0,
+    tags: ['rock', 'italiano', 'da-verificare'],
+    sections: [
+      { name: 'Verse', bars: ['E', 'A', 'E', 'A'] },
+      { name: 'Chorus', bars: ['A', 'B', 'E', 'E'] }
+    ]
+  },
+  {
+    id: 'cera-un-ragazzo', title: 'C’era un Ragazzo che come me Amava i Beatles e i Rolling Stones', artist: 'Gianni Morandi', year: '1966', key: 'G', capo: 0,
+    tags: ['pop', 'italiano', '60s', 'da-verificare'],
+    sections: [
+      { name: 'Verse', bars: ['G', 'C', 'D', 'G'] },
+      { name: 'Chorus', bars: ['C', 'G', 'D', 'G'] }
+    ]
+  },
+  {
+    id: 'amore-disperato', title: 'Amore Disperato', artist: 'Nada', year: '1983', key: 'Am', capo: 0,
+    tags: ['pop', 'italiano', 'da-verificare'],
+    sections: [
+      { name: 'Verse', bars: ['Am', 'Dm', 'E', 'Am'] },
+      { name: 'Chorus', bars: ['F', 'G', 'C', 'E', 'Am'] }
+    ]
+  },
+  {
+    id: 'ma-che-freddo-fa', title: 'Ma Che Freddo Fa', artist: 'Nada', year: '1969', key: 'Am', capo: 0,
+    tags: ['pop', 'italiano', '60s', 'da-verificare'],
+    sections: [
+      { name: 'Verse', bars: ['Am', 'E', 'Am', 'E'] },
+      { name: 'Chorus', bars: ['C', 'G', 'F', 'E'] }
+    ]
+  },
+  {
+    id: 'cuore-matto', title: 'Cuore Matto', artist: 'Little Tony', year: '1967', key: 'Am', capo: 0,
+    tags: ['pop', 'italiano', '60s', 'da-verificare'],
+    sections: [
+      { name: 'Verse', bars: ['Am', 'E', 'Am', 'E'] },
+      { name: 'Chorus', bars: ['C', 'G', 'C', 'E', 'Am'] }
+    ]
+  },
+  {
+    id: 'tu-vuo-fa-lamericano', title: "Tu Vuò Fà l'Americano", artist: 'Renato Carosone', year: '1956', key: 'Am', capo: 0,
+    tags: ['swing', 'italiano', 'classic'],
+    sections: [
+      { name: 'Verse', bars: ['Am', 'E', 'Am', 'E'] },
+      { name: 'Chorus', bars: ['Dm', 'Am', 'E', 'Am'] }
+    ]
+  },
+  {
+    id: 'svalutation', title: 'Svalutation', artist: 'Adriano Celentano', year: '1976', key: 'Am', capo: 0,
+    tags: ['funk', 'italiano', 'da-verificare'],
+    sections: [
+      { name: 'Verse', bars: ['Am', 'D', 'Am', 'D'] },
+      { name: 'Chorus', bars: ['F', 'G', 'Am', 'Am'] }
+    ]
+  },
+  {
+    id: 'baila-morena', title: 'Baila Morena', artist: 'Zucchero', year: '2001', key: 'Dm', capo: 0,
+    tags: ['latin', 'italiano', 'da-verificare'],
+    sections: [
+      { name: 'Verse', bars: ['Dm', 'Am', 'Bb', 'A'] },
+      { name: 'Chorus', bars: ['Dm', 'Bb', 'A', 'Dm'] }
+    ]
+  },
+  {
+    id: 'timmagini', title: "T'Immagini / Non l'Hai Mica Capito", artist: 'Ornella Vanoni', year: '1970', key: 'C', capo: 0,
+    tags: ['pop', 'italiano', 'medley', 'da-verificare'],
+    sections: [
+      { name: 'Verse', bars: ['C', 'G', 'Am', 'F'] },
+      { name: 'Chorus', bars: ['F', 'G', 'C', 'Am'] }
+    ]
+  },
+  {
+    id: 'mentre-tutto-scorre', title: 'Mentre Tutto Scorre', artist: 'Negramaro', year: '2005', key: 'Em', capo: 0,
+    tags: ['rock', 'italiano', 'da-verificare'],
+    sections: [
+      { name: 'Verse', bars: ['Em', 'C', 'G', 'D'] },
+      { name: 'Chorus', bars: ['C', 'G', 'D', 'Em'] }
+    ]
+  },
+  {
+    id: 'wind-of-change', title: 'Wind of Change', artist: 'Scorpions', year: '1990', key: 'C', capo: 0,
+    tags: ['rock', '90s', 'ballad', 'classic'],
+    sections: [
+      { name: 'Verse', bars: ['C', 'Dm', 'G', 'C'] },
+      { name: 'Chorus', bars: ['F', 'G', 'C', 'Am', 'F', 'G', 'C', 'C'] }
+    ]
+  },
+  {
+    id: 'do-it-again', title: 'Do It Again', artist: 'Steely Dan', year: '1972', key: 'Am', capo: 0,
+    tags: ['rock', '70s', 'da-verificare'],
+    sections: [
+      { name: 'Verse', bars: ['Am', 'G', 'Am', 'G'] },
+      { name: 'Chorus', bars: ['Dm', 'Am', 'E', 'Am'] }
+    ]
+  },
+  {
+    id: 'everything-i-do', title: '(Everything I Do) I Do It for You', artist: 'Bryan Adams', year: '1991', key: 'D', capo: 0,
+    tags: ['pop', '90s', 'ballad'],
+    sections: [
+      { name: 'Verse', bars: ['D', 'A', 'Bm', 'G', 'D'] },
+      { name: 'Chorus', bars: ['G', 'A', 'D', 'Bm', 'G', 'A', 'D'] }
+    ]
+  },
+  {
+    id: 'despacito', title: 'Despacito', artist: 'Luis Fonsi', year: '2017', key: 'Bm', capo: 0,
+    tags: ['latin', 'pop', '10s'],
+    sections: [
+      { name: 'Verse', bars: ['Bm', 'G', 'D', 'A'] },
+      { name: 'Chorus', bars: ['Bm', 'G', 'D', 'A'] }
+    ]
+  },
+  {
+    id: 'you-never-can-tell', title: 'You Never Can Tell', artist: 'Chuck Berry', year: '1964', key: 'C', capo: 0,
+    tags: ['rock', '60s', 'classic'],
+    sections: [
+      { name: 'Verse', bars: ['C', 'C', 'C', 'C', 'G', 'G', 'C', 'C'] },
+      { name: 'Chorus', bars: ['F', 'F', 'C', 'C', 'G', 'G', 'C', 'C'] }
+    ]
+  },
+  {
+    id: 'stella-stai', title: 'Stella Stai', artist: 'Umberto Tozzi', year: '1980', key: 'D', capo: 0,
+    tags: ['pop', 'italiano', 'da-verificare'],
+    sections: [
+      { name: 'Verse', bars: ['D', 'A', 'G', 'D'] },
+      { name: 'Chorus', bars: ['G', 'A', 'D', 'Bm', 'G', 'A', 'D'] }
+    ]
+  },
+  {
+    id: 'medley-gianna', title: 'Medley: Gianna / Obladì / La Canzone del Sole / Ma il Cielo è Sempre più Blu', artist: 'Vari', year: '', key: 'D', capo: 0,
+    tags: ['italiano', 'medley', 'da-verificare'],
+    sections: [
+      { name: 'Gianna', bars: ['D', 'G', 'A', 'D'] },
+      { name: 'Obladì Obladà', bars: ['C', 'G', 'C', 'F', 'C', 'G', 'C'] },
+      { name: 'La Canzone del Sole', bars: ['D', 'G', 'A', 'D'] },
+      { name: 'Ma il Cielo è Sempre più Blu', bars: ['C', 'F', 'G', 'C'] }
+    ]
+  },
+  {
+    id: '50-special', title: '50 Special', artist: 'Lùnapop', year: '1999', key: 'D', capo: 0,
+    tags: ['pop', 'italiano', '90s', 'da-verificare'],
+    sections: [
+      { name: 'Verse', bars: ['D', 'A', 'Bm', 'G'] },
+      { name: 'Chorus', bars: ['G', 'A', 'D', 'Bm', 'G', 'A', 'D'] }
+    ]
+  },
+  {
+    id: 'balliamo-sul-mondo', title: 'Balliamo sul Mondo', artist: 'Ligabue', year: '1990', key: 'E', capo: 0,
+    tags: ['rock', 'italiano', 'da-verificare'],
+    sections: [
+      { name: 'Verse', bars: ['E', 'A', 'E', 'B'] },
+      { name: 'Chorus', bars: ['A', 'B', 'E', 'E'] }
+    ]
+  },
+  {
+    id: 'sweet-child-o-mine', title: "Sweet Child o' Mine", artist: "Guns N' Roses", year: '1987', key: 'D', capo: 0,
+    tags: ['rock', '80s', 'classic'],
+    sections: [
+      { name: 'Intro', bars: ['D', 'D', 'C', 'C', 'G', 'G', 'D', 'D'] },
+      { name: 'Verse', bars: ['D', 'C', 'G', 'D'] },
+      { name: 'Chorus', bars: ['A', 'C', 'G', 'D', 'A', 'C', 'G', 'D'] }
+    ]
+  }
+];
+
+// ── Scalette (setlist) ───────────────────────────────────────────────────
+// Ogni setlist è un elenco ORDINATO di id presenti in window.SONGS.
+// La UI mostra un menu per scegliere la scaletta; "Tutta la libreria" mostra
+// tutti i brani. Aggiungere una scaletta = aggiungere un oggetto qui sotto.
+window.SETLISTS = [
+  {
+    id: 'rock-set',
+    name: 'Rock Set',
+    songs: [
+      'white-room', 'heroes', 'wicked-game', 'cocaine', 'bohemian-like-you', 'easy',
+      'while-my-guitar-gently-weeps', 'karma-police', 'angie', 'the-man-who-sold-the-world',
+      'born-to-run', 'streets-of-love', 'bad-day', 'comfortably-numb', 'time',
+      'whiskey-in-the-jar', 'purple-rain', 'perfect-day', 'californication', 'tunnel-of-love',
+      'narcotic', 'dont-you', 'mr-crowley', 'leaving-new-york', 'now-and-then', 'one-u2',
+      'like-a-rolling-stone'
+    ]
+  },
+  {
+    id: 'scaletta-italiana',
+    name: 'Scaletta Italiana',
+    songs: [
+      'la-flaca', 'volevo-essere-un-duro', 'angels', 'prendila-cosi', 'losing-my-religion',
+      'il-mare-d-inverno', 'one-u2', 'vivere', '50-mila', 'every-breath-you-take',
+      'dimmi-di-si', 'la-mia-signorina', 'laura-non-ce-uomo-ragno', 'figli-delle-stelle',
+      'crazy-little-thing-called-love', 'yes-i-know-my-way', 'disperato-erotico-stomp',
+      'cera-un-ragazzo', 'amore-disperato', 'ma-che-freddo-fa', 'cuore-matto',
+      'tu-vuo-fa-lamericano', 'svalutation', 'baila-morena', 'timmagini', 'mentre-tutto-scorre',
+      'wind-of-change', 'do-it-again', 'everything-i-do', 'despacito', 'you-never-can-tell',
+      'stella-stai', 'medley-gianna', 'wish-you-were-here', '50-special', 'balliamo-sul-mondo',
+      'sweet-child-o-mine'
+    ]
   }
 ];

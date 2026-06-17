@@ -23,8 +23,8 @@ schede accordi in stile *iReal Pro*: elenco accordi a misure, suddiviso per
 |---|---|---|
 | `engine.js` | `window.ChordEngine` | parsing accordi, scale, **trasposizione** |
 | `instruments.js` | `window.Instruments` | diagrammi SVG chitarra/ukulele/piano |
-| `songs.js` | `window.SONGS` | libreria brani a sezioni (dati aperti) |
-| `index.html` | UI | ricerca, griglia misure, controlli, integrazione |
+| `songs.js` | `window.SONGS` + `window.SETLISTS` | libreria brani a sezioni + scalette (dati aperti) |
+| `index.html` | UI | ricerca, scalette, griglia misure, controlli, integrazione |
 
 Il contratto delle API condivise è in [`CONTRACT.md`](./CONTRACT.md).
 
@@ -44,6 +44,38 @@ Aggiungi un oggetto a `window.SONGS` in `songs.js`:
 Ogni elemento di `bars` è **una misura**; più accordi nella stessa misura si
 separano con uno spazio (es. `'Dm/C Bbmaj7 C7'`). I simboli devono essere nel
 formato di `ChordEngine.parse` (`F`, `Em7`, `A7`, `Dm/C`, `Bbmaj7`, `A7sus4`…).
+
+## Scalette (setlist)
+Puoi raggruppare i brani in **scalette** ordinate e sceglierle dal menu a tendina
+nella sidebar (l'opzione *Tutta la libreria* mostra tutto). Una scaletta è solo un
+elenco di `id` presenti in `window.SONGS`:
+
+```js
+window.SETLISTS = [
+  { id: 'rock-set', name: 'Rock Set', songs: ['white-room', 'heroes', /* … */] },
+  { id: 'scaletta-italiana', name: 'Scaletta Italiana', songs: ['la-flaca', /* … */] }
+];
+```
+Lo stesso brano può comparire in più scalette (es. *One*, *Wish You Were Here*).
+
+## Notazione note in italiano (Do Re Mi)
+Il pulsante **C D E / Do Re Mi** nei controlli commuta la visualizzazione delle note
+tra notazione anglosassone (C, D, E…) e **italiana** (Do, Re, Mi…). È solo
+*visualizzazione*: il motore lavora sempre internamente in notazione inglese, quindi
+trasposizione e diagrammi restano corretti. La conversione tocca griglia accordi,
+tonalità, chip della sidebar, popover e titoli dei diagrammi.
+
+## File unico (standalone) e build
+`chordlab-standalone.html` è la versione **tutto-in-uno** (engine + strumenti + brani
+in un solo file), comoda da scaricare e aprire senza altri file. Si **rigenera** dai
+sorgenti con:
+
+```sh
+node build.js
+```
+Lo script inlinea `engine.js`, `instruments.js` e `songs.js` dentro `index.html`. La
+sorgente di verità resta `index.html` + i tre `.js`: dopo ogni modifica, rilancia il
+build per aggiornare lo standalone.
 
 ## Nota sulla "ricerca sul web"
 La richiesta originale prevedeva un agente che recupera la sequenza accordi da

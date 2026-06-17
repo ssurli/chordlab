@@ -204,6 +204,37 @@
     return isMinor ? name + 'm' : name;
   }
 
+  // ---- Italian note notation (Do Re Mi…) — display only ----
+  var ITALIAN = { C: 'Do', D: 'Re', E: 'Mi', F: 'Fa', G: 'Sol', A: 'La', B: 'Si' };
+
+  // Convert a single note name (e.g. 'C', 'F#', 'Bb') to Italian, keeping accidentals.
+  function noteToItalian(note) {
+    if (typeof note !== 'string' || note === '') return note;
+    var letter = note.charAt(0).toUpperCase();
+    if (!(letter in ITALIAN)) return note;
+    return ITALIAN[letter] + note.slice(1);
+  }
+
+  // Convert a full chord symbol to Italian: only the root and the slash bass
+  // change name; the suffix (m, 7, maj7, sus4…) is kept as-is.
+  function chordToItalian(sym) {
+    var p = parse(sym);
+    if (!p) return sym;
+    var out = noteToItalian(p.root) + (p.suffix || '');
+    if (p.bass) out += '/' + noteToItalian(p.bass);
+    return out;
+  }
+
+  // Convert a key label (e.g. 'F#m', 'Am', 'Bb') to Italian.
+  function keyToItalian(key) {
+    if (typeof key !== 'string') return key;
+    var k = normalizeKey(key);
+    if (k === '') return key;
+    var isMinor = /m$/.test(k) && k.length > 1 && !/^[A-G][#b]?$/.test(k);
+    var rootStr = isMinor ? k.slice(0, -1) : k;
+    return noteToItalian(rootStr) + (isMinor ? 'm' : '');
+  }
+
   window.ChordEngine = {
     SHARP: SHARP,
     FLAT: FLAT,
@@ -213,6 +244,9 @@
     transposeSmart: transposeSmart,
     transposeKeyName: transposeKeyName,
     keyUsesFlats: keyUsesFlats,
-    noteName: noteName
+    noteName: noteName,
+    noteToItalian: noteToItalian,
+    chordToItalian: chordToItalian,
+    keyToItalian: keyToItalian
   };
 })();
