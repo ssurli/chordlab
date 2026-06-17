@@ -76,6 +76,27 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,-ap
 #popover .pop-notes{font-size:11px;color:var(--text3);text-align:center;margin-top:6px}
 #pop-close{position:absolute;top:4px;right:8px;color:var(--text3);cursor:pointer;font-size:16px;line-height:1}
 
+/* EDITOR */
+#lib-tools{display:flex;gap:6px;margin-top:10px}
+#lib-tools .btn{flex:1;text-align:center;font-size:11px;padding:6px 4px}
+.editor .ed-hint{font-size:11px;color:var(--text3);margin:4px 0 16px;line-height:1.5}
+.ed-meta{display:flex;flex-wrap:wrap;margin-bottom:8px}
+.editor label{display:inline-flex;flex-direction:column;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);gap:3px;margin:0 10px 10px 0}
+.editor input,.editor textarea{background:var(--bg);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:13px;padding:6px 8px;font-family:inherit;outline:none}
+.editor input:focus,.editor textarea:focus{border-color:var(--accent)}
+.ed-meta input{width:130px}
+.ed-section{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:10px}
+.ed-sec-head{display:flex;gap:6px;align-items:center;margin-bottom:7px}
+.ed-sec-name{flex:1}
+.ed-sec-bars{width:100%;min-height:64px;resize:vertical;line-height:1.6}
+.ed-warn{font-size:11px;color:#e0a045;margin-top:6px;min-height:14px}
+.ed-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+.btn.danger{border-color:#7a3a3a;color:#d88}
+.btn.danger:hover{background:#3a1e1e;color:#fbb}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#1a1a1a;font-weight:600}
+.btn.primary:hover{background:var(--accent2);color:#1a1a1a}
+.edited-dot{color:var(--accent);font-weight:700;margin-left:4px}
+
 /* TOPBAR mobile */
 #topbar{display:none;align-items:center;gap:12px;padding:10px 14px;background:var(--bg2);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
 #hamburger{background:none;border:1px solid var(--border2);border-radius:6px;padding:6px 9px;cursor:pointer;display:flex;flex-direction:column;gap:4px}
@@ -121,6 +142,12 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,-ap
     <p id="lib-count">— brani</p>
     <select id="setlist" title="Scegli una scaletta"></select>
     <input id="search" type="search" placeholder="Cerca brano, artista, tag…" autocomplete="off">
+    <div id="lib-tools">
+      <span class="btn" onclick="edNewSong()" title="Crea un nuovo brano">➕ Nuovo</span>
+      <span class="btn" onclick="edExport()" title="Esporta le tue modifiche in un file">⬇︎ Esporta</span>
+      <span class="btn" onclick="document.getElementById('imp-file').click()" title="Importa modifiche da file">⬆︎ Importa</span>
+    </div>
+    <input id="imp-file" type="file" accept="application/json,.json" style="display:none">
   </div>
   <div id="song-list"></div>
 </nav>
@@ -1787,12 +1814,33 @@ window.SETLISTS = [
 </script>
 <script>
 'use strict';
-var SONGS = window.SONGS || [];
+var BASE_SONGS = (window.SONGS || []).map(cloneSong);
 var SETLISTS = window.SETLISTS || [];
 var E = window.ChordEngine;
 var INST = window.Instruments;
+var STORE_KEY = 'chordlab.userSongs.v1';
+var userStore = loadStore();   // { id: songObject } — override + brani nuovi dell'utente
+var SONGS = [];
+rebuildSongs();
 
-var state = { sel: null, transpose: 0, instrument: 'guitar', showAll: true, filter: '', setlist: '', italian: false };
+var state = { sel: null, transpose: 0, instrument: 'guitar', showAll: true, filter: '', setlist: '', italian: false, editing: false };
+
+/* ---- persistenza modifiche utente (localStorage) ---- */
+function cloneSong(s){ return JSON.parse(JSON.stringify(s)); }
+function loadStore(){ try { return JSON.parse(localStorage.getItem(STORE_KEY)) || {}; } catch(e){ return {}; } }
+function saveStore(){
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(userStore)); return true; }
+  catch(e){ alert('Impossibile salvare nel browser (storage non disponibile).\nUsa “Esporta” per non perdere le modifiche.'); return false; }
+}
+// SONGS = base + override utente (per id) + brani nuovi, preservando l'ordine.
+function rebuildSongs(){
+  var byId = {}, order = [];
+  BASE_SONGS.forEach(function(s){ byId[s.id] = s; order.push(s.id); });
+  Object.keys(userStore).forEach(function(id){ if(!byId[id]) order.push(id); byId[id] = userStore[id]; });
+  SONGS = order.map(function(id){ return byId[id]; });
+}
+function isEdited(id){ return Object.prototype.hasOwnProperty.call(userStore, id); }
+function isUserOnly(id){ return isEdited(id) && !BASE_SONGS.some(function(s){ return s.id===id; }); }
 
 /* ---- lookup helpers ---- */
 function songById(id){ for(var i=0;i<SONGS.length;i++){ if(SONGS[i].id===id) return SONGS[i]; } return null; }
@@ -1895,8 +1943,9 @@ function buildSidebar(){
   if(!list.length){ el.innerHTML = '<div id="no-results">Nessun brano trovato per “'+f+'”</div>'; return; }
   el.innerHTML = list.map(function(s){
     var active = s.id===state.sel ? ' active' : '';
+    var mark = isEdited(s.id) ? '<span class="edited-dot" title="modificato">•</span>' : '';
     return '<div class="song-item'+active+'" onclick="pick(\''+s.id+'\')">'+
-      '<div><div class="song-name">'+s.title+'</div>'+
+      '<div><div class="song-name">'+s.title+mark+'</div>'+
       '<div class="song-artist-sidebar">'+s.artist+(s.year?' · '+s.year:'')+'</div></div>'+
       '<span class="song-key-chip">'+locKey(s.key)+'</span></div>';
   }).join('');
@@ -1904,7 +1953,7 @@ function buildSidebar(){
 
 /* ================= MAIN RENDER ================= */
 function pick(id){
-  state.sel = id; state.transpose = 0;
+  state.sel = id; state.transpose = 0; state.editing = false; edModel = null;
   buildSidebar(); render(); closeMenu();
   document.getElementById('main').scrollTop = 0;
 }
@@ -1915,6 +1964,7 @@ function setInstrument(id){ state.instrument = id; render(); }
 function toggleAll(){ state.showAll = !state.showAll; render(); }
 
 function render(){
+  if(state.editing){ renderEditor(); return; }
   var s = SONGS.filter(function(x){return x.id===state.sel;})[0];
   if(!s){ return; }
   var tShow = state.transpose>0 ? ' (+'+state.transpose+')' : (state.transpose<0 ? ' ('+state.transpose+')' : '');
@@ -1939,6 +1989,7 @@ function render(){
       '<span class="btn'+(state.italian?' inst-btn active':'')+'" onclick="toggleNotation()">'+(state.italian?'Do Re Mi':'C D E')+'</span></div>'+
     '<div class="ctl-group" style="margin-left:auto"><span class="ctl-label">Strumento</span>'+instBtns+'</div>'+
     '<span class="btn" onclick="toggleAll()">'+(state.showAll?'Nascondi':'Mostra')+' diagrammi</span>'+
+    '<span class="btn" onclick="edEdit()">✏️ Modifica</span>'+
     '<span class="btn" onclick="window.print()">🖨 Stampa</span>'+
   '</div>';
 
@@ -1969,6 +2020,175 @@ function render(){
   }
 
   document.getElementById('content').innerHTML = html;
+}
+
+/* ================= EDITOR ================= */
+var edModel = null; // brano in modifica (clone di lavoro)
+
+function edEdit(){
+  var s = songById(state.sel); if(!s) return;
+  state.transpose = 0;             // si modifica sempre nella tonalità memorizzata
+  edModel = cloneSong(s);
+  if(!edModel.sections || !edModel.sections.length) edModel.sections = [{name:'Verse', bars:['']}];
+  state.editing = true; render();
+  document.getElementById('main').scrollTop = 0;
+}
+function edNewSong(){
+  edModel = { id:'', title:'', artist:'', year:'', key:'C', capo:0, tags:[],
+              sections:[{name:'Verse', bars:['C','G','Am','F']}], _new:true };
+  state.sel = null; state.transpose = 0; state.editing = true;
+  render(); closeMenu();
+  document.getElementById('main').scrollTop = 0;
+}
+function edCancel(){ state.editing = false; edModel = null; buildSidebar(); render(); }
+
+function edBarsToText(bars){ return (bars||[]).join('\n'); }
+function edTextToBars(txt){ return String(txt).split('\n').map(function(l){ return l.trim(); }); }
+function edAttr(v){ return String(v==null?'':v).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+function edTextEsc(v){ return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+
+function renderEditor(){
+  var m = edModel; if(!m){ state.editing=false; return; }
+  var isNew = !!m._new;
+  var html = '<div class="song-header"><h2>'+(isNew?'➕ Nuovo brano':'✏️ Modifica brano')+'</h2></div>'+
+    '<div class="editor">'+
+    '<div class="ed-hint">Ogni <b>riga</b> di una sezione è <b>una misura</b>. Più accordi nella stessa misura: '+
+    'separali con uno spazio (es. <code>Dm/C Bbmaj7 C7</code>). Lascia una riga vuota per una misura vuota.<br>'+
+    'Formato simboli accettati da ChordLab: <code>C&nbsp; Em7&nbsp; A7&nbsp; Dm/C&nbsp; Bbmaj7&nbsp; A7sus4</code>.</div>'+
+    '<div class="ed-meta">'+
+      '<label>Titolo<input id="ed-title" value="'+edAttr(m.title)+'"></label>'+
+      '<label>Artista<input id="ed-artist" value="'+edAttr(m.artist)+'"></label>'+
+      '<label>Anno<input id="ed-year" value="'+edAttr(m.year)+'"></label>'+
+      '<label>Tonalità<input id="ed-key" value="'+edAttr(m.key)+'"></label>'+
+      '<label>Capo<input id="ed-capo" type="number" min="0" max="12" value="'+(parseInt(m.capo,10)||0)+'"></label>'+
+      '<label>Tag (virgola)<input id="ed-tags" value="'+edAttr((m.tags||[]).join(', '))+'"></label>'+
+    '</div>'+
+    '<div id="ed-sections">';
+  m.sections.forEach(function(sec, i){ html += edSectionHTML(sec, i, m.sections.length); });
+  html += '</div>'+
+    '<span class="btn" onclick="edAddSection()">+ Aggiungi sezione</span>'+
+    '<div class="ed-actions">'+
+      '<span class="btn primary" onclick="edSave()">💾 Salva</span>'+
+      '<span class="btn" onclick="edCancel()">Annulla</span>'+
+      (isNew ? '' : (isUserOnly(m.id)
+        ? '<span class="btn danger" onclick="edDelete()">🗑 Elimina brano</span>'
+        : (isEdited(m.id) ? '<span class="btn danger" onclick="edReset()">↩︎ Ripristina originale</span>' : '')))+
+    '</div></div>';
+  document.getElementById('content').innerHTML = html;
+  document.querySelectorAll('.ed-sec-bars').forEach(function(t){ edValidate(t); });
+}
+
+function edSectionHTML(sec, i, total){
+  return '<div class="ed-section" data-i="'+i+'">'+
+    '<div class="ed-sec-head">'+
+      '<input class="ed-sec-name" value="'+edAttr(sec.name||'')+'" placeholder="Nome sezione (Verse, Chorus, Bridge…)">'+
+      '<span class="btn sm" onclick="edMoveSection('+i+',-1)"'+(i===0?' style="opacity:.3;pointer-events:none"':'')+'>↑</span>'+
+      '<span class="btn sm" onclick="edMoveSection('+i+',1)"'+(i===total-1?' style="opacity:.3;pointer-events:none"':'')+'>↓</span>'+
+      '<span class="btn sm danger" onclick="edRemoveSection('+i+')">✕</span>'+
+    '</div>'+
+    '<textarea class="ed-sec-bars" spellcheck="false" oninput="edValidate(this)">'+edTextEsc(edBarsToText(sec.bars))+'</textarea>'+
+    '<div class="ed-warn"></div>'+
+  '</div>';
+}
+
+// Legge i campi correnti del DOM dentro edModel.
+function edSyncFromDOM(){
+  var m = edModel; if(!m) return;
+  function val(id){ var el=document.getElementById(id); return el?el.value:''; }
+  m.title = val('ed-title'); m.artist = val('ed-artist'); m.year = val('ed-year');
+  m.key = val('ed-key') || 'C'; m.capo = parseInt(val('ed-capo'),10) || 0;
+  m.tags = val('ed-tags').split(',').map(function(t){ return t.trim(); }).filter(Boolean);
+  var secs = [];
+  document.querySelectorAll('#ed-sections .ed-section').forEach(function(el){
+    var name = (el.querySelector('.ed-sec-name').value||'').trim();
+    var bars = edTextToBars(el.querySelector('.ed-sec-bars').value);
+    // togli righe vuote in coda
+    while(bars.length && bars[bars.length-1]==='') bars.pop();
+    secs.push({ name: name||'Sezione', bars: bars });
+  });
+  m.sections = secs.length ? secs : [{name:'Verse', bars:['']}];
+}
+
+function edAddSection(){ edSyncFromDOM(); edModel.sections.push({name:'Sezione', bars:['']}); renderEditor(); }
+function edRemoveSection(i){ edSyncFromDOM(); edModel.sections.splice(i,1); if(!edModel.sections.length) edModel.sections.push({name:'Verse',bars:['']}); renderEditor(); }
+function edMoveSection(i,d){ edSyncFromDOM(); var a=edModel.sections, j=i+d; if(j<0||j>=a.length) return; var t=a[i]; a[i]=a[j]; a[j]=t; renderEditor(); }
+
+// Evidenzia simboli non riconosciuti in una textarea sezione.
+function edValidate(ta){
+  var warn = ta.parentNode.querySelector('.ed-warn'); if(!warn) return;
+  var bad = [];
+  edTextToBars(ta.value).forEach(function(bar){
+    if(!bar) return;
+    bar.split(/\s+/).filter(Boolean).forEach(function(tok){ if(!E.parse(tok) && bad.indexOf(tok)<0) bad.push(tok); });
+  });
+  warn.textContent = bad.length ? ('⚠ Simboli non riconosciuti: '+bad.join(', ')) : '';
+}
+
+function edSlug(str){
+  return String(str||'').toLowerCase().trim()
+    .replace(/['’"`]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'') || 'brano';
+}
+function edUniqueId(base){
+  var id = base, n = 2;
+  while(SONGS.some(function(s){ return s.id===id; })) { id = base+'-'+n; n++; }
+  return id;
+}
+
+function edSave(){
+  edSyncFromDOM();
+  var m = edModel;
+  if(!m.title.trim()){ alert('Inserisci almeno un titolo.'); return; }
+  if(m._new || !m.id){ m.id = edUniqueId(edSlug(m.title)); }
+  delete m._new;
+  userStore[m.id] = cloneSong(m);
+  saveStore();
+  rebuildSongs();
+  state.editing = false; state.sel = m.id; edModel = null;
+  buildSidebar(); render();
+}
+
+function edReset(){
+  if(!edModel || !edModel.id) return;
+  if(!confirm('Ripristinare gli accordi originali di questo brano? Le tue modifiche andranno perse.')) return;
+  var id = edModel.id;
+  delete userStore[id]; saveStore(); rebuildSongs();
+  state.editing=false; edModel=null; buildSidebar();
+  if(songById(id)){ state.sel=id; render(); } else { state.sel=null; }
+}
+function edDelete(){
+  if(!edModel || !edModel.id) return;
+  if(!confirm('Eliminare definitivamente questo brano creato da te?')) return;
+  delete userStore[edModel.id]; saveStore(); rebuildSongs();
+  state.editing=false; edModel=null; state.sel = SONGS.length?SONGS[0].id:null;
+  buildSidebar(); if(state.sel) render(); else document.getElementById('content').innerHTML='<div id="no-sel">Nessun brano</div>';
+}
+
+/* ---- esporta / importa modifiche ---- */
+function edExport(){
+  if(!Object.keys(userStore).length){ alert('Non ci sono modifiche da esportare.'); return; }
+  var blob = new Blob([JSON.stringify(userStore, null, 2)], {type:'application/json'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'chordlab-modifiche.json';
+  document.body.appendChild(a); a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 100);
+}
+function edImportFile(file){
+  var r = new FileReader();
+  r.onload = function(){
+    try {
+      var obj = JSON.parse(r.result);
+      if(!obj || typeof obj!=='object') throw 0;
+      var n = 0;
+      Object.keys(obj).forEach(function(id){
+        var s = obj[id];
+        if(s && s.title && s.sections){ userStore[s.id||id] = s; n++; }
+      });
+      saveStore(); rebuildSongs(); buildSidebar();
+      alert('Importate '+n+' modifiche/brani.');
+    } catch(e){ alert('File non valido.'); }
+  };
+  r.readAsText(file);
 }
 
 /* ================= POPOVER (click chord -> diagram) ================= */
@@ -2006,6 +2226,10 @@ document.getElementById('search').addEventListener('input', function(e){
 });
 document.getElementById('setlist').addEventListener('change', function(e){
   state.setlist = e.target.value; buildSidebar();
+});
+document.getElementById('imp-file').addEventListener('change', function(e){
+  if(e.target.files && e.target.files[0]) edImportFile(e.target.files[0]);
+  e.target.value = '';
 });
 
 /* ================= MOBILE MENU ================= */

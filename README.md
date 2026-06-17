@@ -65,6 +65,20 @@ tra notazione anglosassone (C, D, E…) e **italiana** (Do, Re, Mi…). È solo
 trasposizione e diagrammi restano corretti. La conversione tocca griglia accordi,
 tonalità, chip della sidebar, popover e titoli dei diagrammi.
 
+## Modificare accordi e creare brani (in-app)
+Dalla scheda di un brano, **✏️ Modifica** apre l'editor: puoi correggere gli accordi
+(ogni riga = una misura, più accordi separati da spazio), rinominare/riordinare/aggiungere
+sezioni, e cambiare titolo/artista/tonalità/capo/tag. I simboli non riconosciuti sono
+segnalati in tempo reale. **➕ Nuovo** (sidebar) crea un brano da zero.
+
+Le modifiche si salvano nel browser (**localStorage**, chiave `chordlab.userSongs.v1`) e
+sono applicate *sopra* i dati di `songs.js` senza toccarlo: i brani modificati hanno un
+puntino • nell'elenco. **↩︎ Ripristina originale** annulla le modifiche a un brano di
+libreria; **🗑 Elimina** rimuove un brano creato da te.
+
+Poiché localStorage è per-browser, usa **⬇︎ Esporta / ⬆︎ Importa** (sidebar) per salvare le
+modifiche in un file JSON, spostarle su un altro dispositivo o reincorporarle in `songs.js`.
+
 ## File unico (standalone) e build
 `chordlab-standalone.html` è la versione **tutto-in-uno** (engine + strumenti + brani
 in un solo file), comoda da scaricare e aprire senza altri file. Si **rigenera** dai
