@@ -65,6 +65,26 @@ tra notazione anglosassone (C, D, E…) e **italiana** (Do, Re, Mi…). È solo
 trasposizione e diagrammi restano corretti. La conversione tocca griglia accordi,
 tonalità, chip della sidebar, popover e titoli dei diagrammi.
 
+## Annotazioni (colori, note, pentagramma)
+Il pulsante **🖍 Annota** attiva la modalità annotazioni:
+- **tocca una battuta** → pannello per assegnarle un **colore** (per evidenziare es. quando
+  entra uno strumento) e/o una **nota di testo** (es. *“entra chitarra”*, *“solo basso”*);
+- accanto al nome di ogni sezione compaiono **🎼** (allega un **estratto di pentagramma**/immagine)
+  e **📝** (nota di sezione); **✕🎼** rimuove l'immagine.
+
+Colori e note vengono mostrati anche in **modalità Live**. Le annotazioni sono salvate
+insieme al brano (localStorage) e incluse nell'**export JSON**, quindi seguono il brano
+quando lo reincorpori in `songs.js`. Nel dato sono in `song.anno`:
+
+```js
+anno: {
+  bars: { '1:4': { c: '#2f4f7a', n: 'entra batteria' } },   // chiave "indiceSezione:indiceBattuta"
+  sections: { '2': { note: 'raddoppio chitarre', img: 'data:image/png;base64,…' } }
+}
+```
+Le immagini sono incorporate come data URL: usale per **estratti brevi** (lo spazio locale del
+browser è limitato, ~5 MB).
+
 ## Modalità Live (tablet sul leggìo)
 Il pulsante **🎤 Live** apre una vista da palco, pensata per tablet:
 - **menu a scomparsa** a qualsiasi larghezza (anche su tablet), con overlay;

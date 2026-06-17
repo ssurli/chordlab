@@ -131,6 +131,27 @@ body.live #livebar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;positi
 .lb-btn.exit{color:#e88;border-color:#7a3a3a}
 .lb-btn.on{background:var(--accent);border-color:var(--accent);color:#1a1a1a}
 
+/* ===== ANNOTAZIONI (colori / note / pentagramma) ===== */
+.bar-note{flex-basis:100%;width:100%;font-size:10px;color:var(--text2);text-align:center;margin-top:3px;line-height:1.25}
+body.live .bar-note{font-size:13px;color:#cfcfcf}
+body.annotate .bar{cursor:pointer}
+body.annotate .bar:hover{outline:2px dashed var(--accent);outline-offset:-2px}
+.annot-hint{font-size:12px;color:var(--accent2);background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:8px 12px;margin-bottom:16px}
+.sec-tools{display:inline-flex;gap:6px;margin-left:10px;vertical-align:middle}
+.sec-note{font-size:12px;color:var(--text2);margin:4px 0 8px;white-space:pre-wrap}
+.sec-img{display:block;max-width:100%;max-height:240px;margin:4px 0 12px;border:1px solid var(--border2);border-radius:8px;background:#fff;padding:4px}
+#annopanel{position:fixed;z-index:600;background:var(--bg3);border:1px solid var(--accent);border-radius:10px;padding:14px;box-shadow:0 10px 40px rgba(0,0,0,.6);display:none;width:250px}
+#annopanel.show{display:block}
+#annopanel h4{font-size:12px;color:var(--accent2);margin-bottom:10px;padding-right:16px}
+#anno-close{position:absolute;top:6px;right:10px;color:var(--text3);cursor:pointer;font-size:16px;line-height:1}
+.sw-row{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px}
+.sw{width:28px;height:28px;border-radius:6px;cursor:pointer;border:2px solid #444}
+.sw.sel{border-color:#fff}
+.sw.none{background:repeating-linear-gradient(45deg,#3a3a3a,#3a3a3a 4px,#222 4px,#222 8px)}
+#anno-note{width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:13px;padding:7px 9px;outline:none;margin-bottom:12px}
+#anno-note:focus{border-color:var(--accent)}
+#anno-actions{display:flex;gap:8px}
+
 @media print{
   body{display:block;height:auto;background:#fff;color:#000}
   #sidebar,#topbar,#overlay,.controls .inst-btn,#popover{display:none!important}
@@ -191,6 +212,18 @@ body.live #livebar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;positi
   <div class="pop-notes"></div>
 </div>
 
+<div id="annopanel">
+  <span id="anno-close" onclick="annoClose()">×</span>
+  <h4 id="anno-title"></h4>
+  <div class="sw-row" id="anno-sw"></div>
+  <input id="anno-note" placeholder="Nota (es. entra chitarra)">
+  <div id="anno-actions">
+    <span class="btn primary" onclick="annoSave()">Salva</span>
+    <span class="btn danger" onclick="annoRemove()">Rimuovi</span>
+  </div>
+</div>
+<input id="sec-img-file" type="file" accept="image/*" style="display:none">
+
 <script src="engine.js"></script>
 <script src="instruments.js"></script>
 <script src="songs.js"></script>
@@ -205,7 +238,9 @@ var userStore = loadStore();   // { id: songObject } — override + brani nuovi 
 var SONGS = [];
 rebuildSongs();
 
-var state = { sel: null, transpose: 0, instrument: 'guitar', showAll: true, filter: '', setlist: '', italian: false, editing: false };
+var state = { sel: null, transpose: 0, instrument: 'guitar', showAll: true, filter: '', setlist: '', italian: false, editing: false, live: false, annot: false, chordFs: 0 };
+
+function escHtml(v){ return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 /* ---- persistenza modifiche utente (localStorage) ---- */
 function cloneSong(s){ return JSON.parse(JSON.stringify(s)); }
@@ -372,19 +407,41 @@ function render(){
     '<div class="ctl-group" style="margin-left:auto"><span class="ctl-label">Strumento</span>'+instBtns+'</div>'+
     '<span class="btn" onclick="toggleAll()">'+(state.showAll?'Nascondi':'Mostra')+' diagrammi</span>'+
     '<span class="btn" onclick="edEdit()">✏️ Modifica</span>'+
+    '<span class="btn'+(state.annot?' inst-btn active':'')+'" onclick="toggleAnnotate()">🖍 Annota</span>'+
     '<span class="btn" onclick="toggleLive()">🎤 Live</span>'+
     '<span class="btn" onclick="window.print()">🖨 Stampa</span>'+
   '</div>';
+  if(state.annot){
+    html += '<div class="annot-hint">🖍 Modalità annotazioni attiva — tocca una <b>battuta</b> per colorarla o aggiungere una nota. '+
+      'Usa 🎼 / 📝 accanto al nome di una sezione per allegare un pentagramma o una nota.</div>';
+  }
 
   // sections
-  s.sections.forEach(function(sec){
+  var anno = s.anno || {};
+  var aBars = anno.bars || {}, aSecs = anno.sections || {};
+  s.sections.forEach(function(sec, si){
     var col = sectionColor(sec.name);
-    html += '<div class="section"><span class="section-label" style="background:'+col+'">'+sec.name+'</span><div class="bars">';
-    (sec.bars||[]).forEach(function(bar){
+    html += '<div class="section"><span class="section-label" style="background:'+col+'">'+sec.name+'</span>';
+    if(state.annot){
+      html += '<span class="sec-tools">'+
+        '<span class="btn sm" onclick="secImgPick('+si+')" title="Allega pentagramma/immagine">🎼</span>'+
+        '<span class="btn sm" onclick="secNoteEdit('+si+')" title="Nota sezione">📝</span>'+
+        ((aSecs[si]&&aSecs[si].img)?'<span class="btn sm danger" onclick="secImgRemove('+si+')" title="Rimuovi immagine">✕🎼</span>':'')+
+        '</span>';
+    }
+    var sa = aSecs[si];
+    if(sa && sa.note){ html += '<div class="sec-note">'+escHtml(sa.note)+'</div>'; }
+    if(sa && sa.img){ html += '<img class="sec-img" src="'+sa.img+'" alt="pentagramma">'; }
+    html += '<div class="bars">';
+    (sec.bars||[]).forEach(function(bar, bi){
+      var key = si+':'+bi;
+      var a = aBars[key];
       var toks = String(bar).trim().split(/\s+/).filter(Boolean);
-      if(!toks.length){ html += '<div class="bar empty"></div>'; return; }
+      var cls = 'bar' + (toks.length ? '' : ' empty');
+      var style = (a && a.c) ? ' style="background:'+a.c+';border-color:'+a.c+'"' : '';
       var inner = toks.map(function(t){ return chordHTML(dispChord(s,t)); }).join('');
-      html += '<div class="bar">'+inner+'</div>';
+      var note = (a && a.n) ? '<span class="bar-note">'+escHtml(a.n)+'</span>' : '';
+      html += '<div class="'+cls+'" data-k="'+key+'"'+style+'>'+inner+note+'</div>';
     });
     html += '</div></div>';
   });
@@ -404,6 +461,127 @@ function render(){
 
   if(state.live){ html = liveBarHTML(s) + html; }
   document.getElementById('content').innerHTML = html;
+}
+
+/* ================= ANNOTAZIONI (colori / note / pentagramma) ================= */
+var ANNO_COLORS = [
+  { id:'',        name:'Nessuno' },
+  { id:'#7a5a1f', name:'Giallo' },
+  { id:'#7a2f2f', name:'Rosso' },
+  { id:'#2f6a3f', name:'Verde' },
+  { id:'#2f4f7a', name:'Blu' },
+  { id:'#5a2f6a', name:'Viola' },
+  { id:'#7a4a1f', name:'Arancio' },
+  { id:'#1f6a6a', name:'Ciano' }
+];
+var annoCur = null;           // chiave "si:bi" della battuta in modifica
+var annoPendingColor = '';
+var secImgIndex = null;       // sezione per cui si allega un'immagine
+
+function toggleAnnotate(){
+  state.annot = !state.annot;
+  document.body.classList.toggle('annotate', state.annot);
+  if(!state.annot) annoClose();
+  render();
+}
+
+// Garantisce una copia modificabile del brano corrente in userStore, poi applica fn(anno).
+function annoMutate(fn){
+  var s = songById(state.sel); if(!s) return;
+  var copy = userStore[s.id] ? userStore[s.id] : cloneSong(s);
+  copy.anno = copy.anno || {};
+  copy.anno.bars = copy.anno.bars || {};
+  copy.anno.sections = copy.anno.sections || {};
+  fn(copy.anno);
+  // pulizia: rimuovi anno vuoto
+  if(!Object.keys(copy.anno.bars).length && !Object.keys(copy.anno.sections).length) delete copy.anno;
+  userStore[s.id] = copy;
+  saveStore(); rebuildSongs();
+}
+
+function annoOpen(key, x, y){
+  annoCur = key;
+  var s = songById(state.sel); if(!s) return;
+  var a = (s.anno && s.anno.bars && s.anno.bars[key]) || {};
+  annoPendingColor = a.c || '';
+  var parts = key.split(':'), si = +parts[0], bi = +parts[1];
+  document.getElementById('anno-title').textContent = 'Battuta '+(bi+1)+' — '+((s.sections[si]||{}).name||'');
+  document.getElementById('anno-sw').innerHTML = ANNO_COLORS.map(function(c){
+    var sel = ((a.c||'')===c.id) ? ' sel' : '';
+    var cls = 'sw'+(c.id?'':' none')+sel;
+    var st = c.id ? ' style="background:'+c.id+'"' : '';
+    return '<span class="'+cls+'"'+st+' title="'+c.name+'" onclick="annoSetColor(\''+c.id+'\')"></span>';
+  }).join('');
+  document.getElementById('anno-note').value = a.n || '';
+  var p = document.getElementById('annopanel');
+  p.classList.add('show');
+  var pw = p.offsetWidth, ph = p.offsetHeight;
+  var left = Math.min(x, window.innerWidth - pw - 12);
+  var top = y + 18; if(top + ph > window.innerHeight - 8) top = y - ph - 12;
+  p.style.left = Math.max(8,left)+'px';
+  p.style.top = Math.max(8,top)+'px';
+}
+
+// anteprima dal vivo del colore (senza salvare finché non premi Salva)
+function annoSetColor(c){
+  annoPendingColor = c;
+  var sw = document.getElementById('anno-sw');
+  Array.prototype.forEach.call(sw.querySelectorAll('.sw'), function(el){ el.classList.remove('sel'); });
+  var idx = ANNO_COLORS.map(function(x){return x.id;}).indexOf(c);
+  if(idx>=0 && sw.children[idx]) sw.children[idx].classList.add('sel');
+  var bar = document.querySelector('.bar[data-k="'+annoCur+'"]');
+  if(bar){ bar.style.background = c||''; bar.style.borderColor = c||''; }
+}
+function annoSave(){
+  if(annoCur==null) return;
+  var note = document.getElementById('anno-note').value.trim();
+  var col = annoPendingColor || '';
+  var key = annoCur;
+  annoMutate(function(anno){
+    if(col || note) anno.bars[key] = { c: col, n: note };
+    else delete anno.bars[key];
+  });
+  annoClose(); render();
+}
+function annoRemove(){
+  if(annoCur==null) return;
+  var key = annoCur;
+  annoMutate(function(anno){ delete anno.bars[key]; });
+  annoClose(); render();
+}
+function annoClose(){ var p=document.getElementById('annopanel'); if(p) p.classList.remove('show'); annoCur=null; }
+
+/* ---- pentagramma / immagine e nota per sezione ---- */
+function secImgPick(si){ secImgIndex = si; document.getElementById('sec-img-file').click(); }
+function secImgLoad(file){
+  if(secImgIndex==null) return;
+  var si = secImgIndex;
+  var r = new FileReader();
+  r.onload = function(){
+    var data = r.result;
+    if(data && data.length > 1500000 && !confirm('Immagine grande (~'+Math.round(data.length/1024)+' KB): potrebbe riempire lo spazio locale del browser. Inserirla comunque?')){ secImgIndex=null; return; }
+    annoMutate(function(anno){ anno.sections[si] = anno.sections[si] || {}; anno.sections[si].img = data; });
+    secImgIndex = null; render();
+  };
+  r.readAsDataURL(file);
+}
+function secImgRemove(si){
+  annoMutate(function(anno){
+    if(anno.sections[si]){ delete anno.sections[si].img; if(!anno.sections[si].note) delete anno.sections[si]; }
+  });
+  render();
+}
+function secNoteEdit(si){
+  var s = songById(state.sel); if(!s) return;
+  var cur = (s.anno && s.anno.sections && s.anno.sections[si] && s.anno.sections[si].note) || '';
+  var t = prompt('Nota per la sezione "'+((s.sections[si]||{}).name||'')+'":', cur);
+  if(t===null) return;
+  annoMutate(function(anno){
+    anno.sections[si] = anno.sections[si] || {};
+    if(t.trim()) anno.sections[si].note = t.trim();
+    else { delete anno.sections[si].note; if(!anno.sections[si].img) delete anno.sections[si]; }
+  });
+  render();
 }
 
 /* ================= LIVE / PERFORMANCE MODE ================= */
@@ -656,9 +834,17 @@ function curKeySafe(){ var s=SONGS.filter(function(x){return x.id===state.sel;})
 function closePopover(){ document.getElementById('popover').classList.remove('show'); }
 
 document.addEventListener('click', function(ev){
+  // modalità annotazioni: il click su una battuta apre il pannello annotazioni
+  if(state.annot && !state.live && ev.target.closest){
+    var barEl = ev.target.closest('.bar');
+    if(barEl && barEl.getAttribute('data-k')!=null){
+      ev.stopPropagation(); annoOpen(barEl.getAttribute('data-k'), ev.clientX, ev.clientY); return;
+    }
+  }
   var c = ev.target.closest && ev.target.closest('.chord');
   if(c){ ev.stopPropagation(); showPopover(c.getAttribute('data-sym'), ev.clientX, ev.clientY); return; }
   if(!ev.target.closest || !ev.target.closest('#popover')) closePopover();
+  if(!ev.target.closest || !ev.target.closest('#annopanel')) annoClose();
 });
 
 /* ================= SEARCH + SETLIST ================= */
@@ -670,6 +856,10 @@ document.getElementById('setlist').addEventListener('change', function(e){
 });
 document.getElementById('imp-file').addEventListener('change', function(e){
   if(e.target.files && e.target.files[0]) edImportFile(e.target.files[0]);
+  e.target.value = '';
+});
+document.getElementById('sec-img-file').addEventListener('change', function(e){
+  if(e.target.files && e.target.files[0]) secImgLoad(e.target.files[0]);
   e.target.value = '';
 });
 
