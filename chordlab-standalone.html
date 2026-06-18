@@ -151,6 +151,17 @@ body.annotate .bar:hover{outline:2px dashed var(--accent);outline-offset:-2px}
 #anno-note{width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:13px;padding:7px 9px;outline:none;margin-bottom:12px}
 #anno-note:focus{border-color:var(--accent)}
 #anno-actions{display:flex;gap:8px}
+.sec-abc{background:#fff;border:1px solid var(--border2);border-radius:8px;padding:6px 8px;margin:4px 0 12px;max-width:700px;overflow-x:auto}
+#abcmodal{display:none;position:fixed;inset:0;z-index:700;background:rgba(0,0,0,.6);align-items:center;justify-content:center}
+#abcmodal.show{display:flex}
+.abc-box{background:var(--bg2);border:1px solid var(--accent);border-radius:12px;padding:16px;width:min(700px,94vw);max-height:92vh;overflow:auto}
+.abc-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;color:var(--accent2);font-size:14px}
+.abc-x{cursor:pointer;font-size:20px;color:var(--text3)}
+#abc-text{width:100%;height:120px;background:var(--bg);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:monospace;font-size:13px;padding:8px;outline:none;resize:vertical}
+#abc-preview{background:#fff;border-radius:8px;margin:10px 0;padding:6px;min-height:60px;overflow-x:auto}
+.abc-actions{display:flex;gap:8px;margin-bottom:8px}
+.abc-hint{font-size:11px;color:var(--text3);line-height:1.5}
+.abc-hint code{background:var(--bg);padding:1px 4px;border-radius:3px}
 
 @media print{
   body{display:block;height:auto;background:#fff;color:#000}
@@ -225,6 +236,20 @@ body.annotate .bar:hover{outline:2px dashed var(--accent);outline-offset:-2px}
   </div>
 </div>
 <input id="sec-img-file" type="file" accept="image/*" style="display:none">
+
+<div id="abcmodal">
+  <div class="abc-box">
+    <div class="abc-head"><b>🎵 Pentagramma (notazione ABC)</b><span class="abc-x" onclick="abcClose()">×</span></div>
+    <textarea id="abc-text" spellcheck="false" oninput="abcPreview()"></textarea>
+    <div id="abc-preview"></div>
+    <div class="abc-actions">
+      <span class="btn primary" onclick="abcSave()">💾 Salva</span>
+      <span class="btn" onclick="abcClose()">Annulla</span>
+      <span class="btn danger" onclick="abcRemove()">Rimuovi</span>
+    </div>
+    <div class="abc-hint"><code>K:</code> tonalità · <code>M:</code> metro · note <code>C D E F G A B</code> (minuscole = ottava sopra) · <code>z</code> pausa · <code>|</code> battuta · <code>2</code> dopo la nota = durata. Guida completa: abcnotation.com</div>
+  </div>
+</div>
 
 <script>
 /*! abcjs_basic v6.6.3 Copyright © 2009-2024 Paul Rosen and Gregory Dyke (https://abcjs.net) */
@@ -10736,13 +10761,15 @@ function render(){
     html += '<div class="section"><span class="section-label" style="background:'+col+'">'+sec.name+'</span>';
     if(state.annot){
       html += '<span class="sec-tools">'+
-        '<span class="btn sm" onclick="secImgPick('+si+')" title="Allega pentagramma/immagine">🎼</span>'+
+        '<span class="btn sm" onclick="abcEdit('+si+')" title="Pentagramma (notazione ABC)">🎵</span>'+
+        '<span class="btn sm" onclick="secImgPick('+si+')" title="Allega immagine/pentagramma">🎼</span>'+
         '<span class="btn sm" onclick="secNoteEdit('+si+')" title="Nota sezione">📝</span>'+
         ((aSecs[si]&&aSecs[si].img)?'<span class="btn sm danger" onclick="secImgRemove('+si+')" title="Rimuovi immagine">✕🎼</span>':'')+
         '</span>';
     }
     var sa = aSecs[si];
     if(sa && sa.note){ html += '<div class="sec-note">'+escHtml(sa.note)+'</div>'; }
+    if(sa && sa.abc){ html += '<div class="sec-abc" data-abc="'+si+'"></div>'; }
     if(sa && sa.img){ html += '<img class="sec-img" src="'+sa.img+'" alt="pentagramma">'; }
     html += '<div class="bars">';
     (sec.bars||[]).forEach(function(bar, bi){
@@ -10773,6 +10800,20 @@ function render(){
 
   if(state.live){ html = liveBarHTML(s) + html; }
   document.getElementById('content').innerHTML = html;
+  renderAbcBlocks(s);
+}
+
+// Renderizza i pentagrammi ABC delle sezioni (dopo l'inserimento nel DOM).
+function renderAbcBlocks(s){
+  if(!window.ABCJS) return;
+  var aSecs = (s.anno && s.anno.sections) || {};
+  document.querySelectorAll('.sec-abc[data-abc]').forEach(function(el){
+    var si = el.getAttribute('data-abc');
+    var abc = aSecs[si] && aSecs[si].abc;
+    if(!abc) return;
+    try { ABCJS.renderAbc(el, abc, { responsive:'resize', staffwidth: Math.min(el.clientWidth||640, 680), paddingtop:4, paddingbottom:6 }); }
+    catch(e){ el.innerHTML = '<div style="color:#a55;font-size:11px;padding:6px">ABC non valido</div>'; }
+  });
 }
 
 /* ================= ANNOTAZIONI (colori / note / pentagramma) ================= */
@@ -10895,6 +10936,42 @@ function secNoteEdit(si){
   });
   render();
 }
+
+/* ---- pentagramma ABC (modal con anteprima live) ---- */
+var abcCurSec = null;
+function abcEdit(si){
+  abcCurSec = si;
+  var s = songById(state.sel); if(!s) return;
+  var cur = (s.anno && s.anno.sections && s.anno.sections[si] && s.anno.sections[si].abc) || '';
+  document.getElementById('abc-text').value = cur ||
+    ('X:1\nM:4/4\nL:1/4\nK:'+(s.key||'C')+'\nz4 |');
+  document.getElementById('abcmodal').classList.add('show');
+  abcPreview();
+}
+function abcPreview(){
+  if(!window.ABCJS) return;
+  try { ABCJS.renderAbc('abc-preview', document.getElementById('abc-text').value, { responsive:'resize' }); } catch(e){}
+}
+function abcSave(){
+  if(abcCurSec==null) return;
+  var txt = document.getElementById('abc-text').value.trim();
+  var si = abcCurSec;
+  annoMutate(function(anno){
+    anno.sections[si] = anno.sections[si] || {};
+    if(txt) anno.sections[si].abc = txt;
+    else { delete anno.sections[si].abc; if(!anno.sections[si].img && !anno.sections[si].note) delete anno.sections[si]; }
+  });
+  abcClose(); render();
+}
+function abcRemove(){
+  if(abcCurSec==null) return;
+  var si = abcCurSec;
+  annoMutate(function(anno){
+    if(anno.sections[si]){ delete anno.sections[si].abc; if(!anno.sections[si].img && !anno.sections[si].note) delete anno.sections[si]; }
+  });
+  abcClose(); render();
+}
+function abcClose(){ document.getElementById('abcmodal').classList.remove('show'); abcCurSec=null; }
 
 /* ================= LIVE / PERFORMANCE MODE ================= */
 function liveBarHTML(s){
