@@ -193,10 +193,12 @@ body.annotate .bar:hover{outline:2px dashed var(--accent);outline-offset:-2px}
     <input id="search" type="search" placeholder="Cerca brano, artista, tag…" autocomplete="off">
     <div id="lib-tools">
       <span class="btn" onclick="edNewSong()" title="Crea un nuovo brano">➕ Nuovo</span>
-      <span class="btn" onclick="edExport()" title="Esporta le tue modifiche in un file">⬇︎ Esporta</span>
-      <span class="btn" onclick="document.getElementById('imp-file').click()" title="Importa modifiche da file">⬆︎ Importa</span>
+      <span class="btn" onclick="document.getElementById('cp-file').click()" title="Importa un file ChordPro (.cho/.pro)">📄 ChordPro</span>
+      <span class="btn" onclick="edExport()" title="Esporta le tue modifiche (JSON)">⬇︎ Esporta</span>
+      <span class="btn" onclick="document.getElementById('imp-file').click()" title="Importa modifiche (JSON)">⬆︎ Importa</span>
     </div>
     <input id="imp-file" type="file" accept="application/json,.json" style="display:none">
+    <input id="cp-file" type="file" accept=".cho,.chordpro,.crd,.pro,.txt,text/plain" style="display:none">
   </div>
   <div id="song-list"></div>
 </nav>
@@ -224,8 +226,12 @@ body.annotate .bar:hover{outline:2px dashed var(--accent);outline-offset:-2px}
 </div>
 <input id="sec-img-file" type="file" accept="image/*" style="display:none">
 
+<script src="vendor/abcjs-basic-min.js"></script>
+<script src="vendor/svguitar.umd.js"></script>
+<script src="vendor/chords-db.js"></script>
 <script src="engine.js"></script>
 <script src="instruments.js"></script>
+<script src="chordpro.js"></script>
 <script src="songs.js"></script>
 <script>
 'use strict';
@@ -409,6 +415,7 @@ function render(){
     '<span class="btn" onclick="edEdit()">✏️ Modifica</span>'+
     '<span class="btn'+(state.annot?' inst-btn active':'')+'" onclick="toggleAnnotate()">🖍 Annota</span>'+
     '<span class="btn" onclick="toggleLive()">🎤 Live</span>'+
+    '<span class="btn" onclick="cpExport()" title="Esporta questo brano in ChordPro">⤓ ChordPro</span>'+
     '<span class="btn" onclick="window.print()">🖨 Stampa</span>'+
   '</div>';
   if(state.annot){
@@ -810,6 +817,33 @@ function edImportFile(file){
   r.readAsText(file);
 }
 
+/* ================= CHORDPRO import/export ================= */
+function cpExport(){
+  var s = songById(state.sel); if(!s || !window.ChordPro) return;
+  var blob = new Blob([ChordPro.format(s)], {type:'text/plain'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = (s.id||'brano')+'.cho';
+  document.body.appendChild(a); a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 100);
+}
+function cpImportFile(file){
+  if(!window.ChordPro) return;
+  var r = new FileReader();
+  r.onload = function(){
+    try {
+      var song = ChordPro.parse(r.result);
+      if(!song.title) song.title = file.name.replace(/\.[^.]+$/,'') || 'Brano importato';
+      song.id = edUniqueId(song.id || 'brano-importato');
+      userStore[song.id] = song; saveStore(); rebuildSongs();
+      state.setlist = ''; var sl=document.getElementById('setlist'); if(sl) sl.value='';
+      pick(song.id);
+      alert('Importato da ChordPro: '+song.title);
+    } catch(e){ alert('File ChordPro non valido.'); }
+  };
+  r.readAsText(file);
+}
+
 /* ================= POPOVER (click chord -> diagram) ================= */
 function showPopover(sym, x, y){
   var pop = document.getElementById('popover');
@@ -860,6 +894,10 @@ document.getElementById('imp-file').addEventListener('change', function(e){
 });
 document.getElementById('sec-img-file').addEventListener('change', function(e){
   if(e.target.files && e.target.files[0]) secImgLoad(e.target.files[0]);
+  e.target.value = '';
+});
+document.getElementById('cp-file').addEventListener('change', function(e){
+  if(e.target.files && e.target.files[0]) cpImportFile(e.target.files[0]);
   e.target.value = '';
 });
 
