@@ -122,6 +122,20 @@ Lo script inlinea `engine.js`, `instruments.js` e `songs.js` dentro `index.html`
 sorgente di verità resta `index.html` + i tre `.js`: dopo ogni modifica, rilancia il
 build per aggiornare lo standalone.
 
+## Interoperabilità e librerie integrate
+- **ChordPro** (`chordpro.js`, nativo): importa/esporta brani nel formato standard ChordPro
+  (pulsanti *📄 ChordPro* nella sidebar e *⤓ ChordPro* nella scheda brano). Supporta sia il
+  nostro stile a battute (`| C | G |`) sia il classico `[C]testo`.
+- **Diagrammi accurati**: i diagrammi di chitarra/ukulele usano le diteggiature reali del
+  database aperto [`chords-db`](https://github.com/tombatossals/chords-db) (vendorizzato in
+  `vendor/chords-db.js`), con fallback all'euristica interna per accordi non presenti.
+- **Pentagramma**: gli estratti in notazione ABC sono renderizzati con
+  [`abcjs`](https://github.com/paulrosen/abcjs) (`vendor/abcjs-basic-min.js`).
+
+I file in `vendor/` sono librerie di terze parti (licenza **MIT**) incluse per funzionare
+offline; `build.js` le inlinea nello standalone. Per questo `chordlab-standalone.html` pesa
+~1,2 MB (include database accordi + motore di notazione).
+
 ## Nota sulla "ricerca sul web"
 La richiesta originale prevedeva un agente che recupera la sequenza accordi da
 internet. Lo **scraping di siti come Ultimate Guitar è contro i loro ToS** e

@@ -361,10 +361,46 @@
   var GUITAR_TUNING = [4, 9, 2, 7, 11, 4];   // E A D G B E
   var UKE_TUNING = [7, 0, 4, 9];             // G C E A
 
+  // ---- Voicing accurato da chords-db (tombatossals), se disponibile ----
+  var DBKEY = ['C', 'Csharp', 'D', 'Eb', 'E', 'F', 'Fsharp', 'G', 'Ab', 'A', 'Bb', 'B'];
+  var DBSUF = {
+    '': 'major', 'm': 'minor', '7': '7', 'maj7': 'maj7', 'm7': 'm7', 'm7b5': 'm7b5',
+    'dim': 'dim', 'dim7': 'dim7', 'aug': 'aug', '6': '6', 'm6': 'm6', 'sus2': 'sus2',
+    'sus4': 'sus4', '7sus4': '7sus4', '9': '9', 'add9': 'add9', 'm9': 'm9', 'madd9': 'madd9'
+  };
+  function getDbVoicing(instrument, parsed) {
+    if (typeof window === 'undefined' || !window.CHORDS_DB) return null;
+    var db = window.CHORDS_DB[instrument];
+    if (!db || !db.chords) return null;
+    var sfx = DBSUF[parsed.suffix];
+    if (sfx == null) return null;
+    var key = DBKEY[parsed.rootPc];
+    var list = key && db.chords[key];
+    if (!list) return null;
+    var entry = null;
+    for (var i = 0; i < list.length; i++) { if (list[i].suffix === sfx) { entry = list[i]; break; } }
+    if (!entry || !entry.positions || !entry.positions.length) return null;
+    var pos = entry.positions[0];
+    var bf = pos.baseFret || 1;
+    // chords-db: frets relativi a baseFret quando baseFret>1 -> converti in assoluti
+    var absFrets = pos.frets.map(function (f) { return f > 0 ? f + bf - 1 : f; });
+    var barre = null;
+    if (pos.barres && pos.barres.length) {
+      var rel = pos.barres[0], idxs = [];
+      for (var j = 0; j < pos.frets.length; j++) { if (pos.frets[j] === rel) idxs.push(j); }
+      if (idxs.length) barre = { fret: rel + bf - 1, from: Math.min.apply(null, idxs), to: Math.max.apply(null, idxs) };
+    }
+    return { frets: absFrets, barre: barre, base: minNonZero(absFrets), approx: false };
+  }
+
   function resolveVoicing(instrument, parsed) {
     var dict = instrument === 'ukulele' ? UKE_OPEN : GUITAR_OPEN;
     var tuning = instrument === 'ukulele' ? UKE_TUNING : GUITAR_TUNING;
     var sufKey = suffixKey(parsed.suffix);
+
+    // 0) voicing accurato dal database (diteggiature reali)
+    var dbv = getDbVoicing(instrument, parsed);
+    if (dbv) return dbv;
 
     // 1) curated open shape
     var v = lookupOpen(dict, parsed.root, sufKey);
