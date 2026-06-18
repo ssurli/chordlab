@@ -204,7 +204,8 @@ body.annotate .bar:hover{outline:2px dashed var(--accent);outline-offset:-2px}
     <input id="search" type="search" placeholder="Cerca brano, artista, tag…" autocomplete="off">
     <div id="lib-tools">
       <span class="btn" onclick="edNewSong()" title="Crea un nuovo brano">➕ Nuovo</span>
-      <span class="btn" onclick="document.getElementById('cp-file').click()" title="Importa un file ChordPro (.cho/.pro)">📄 ChordPro</span>
+      <span class="btn" onclick="document.getElementById('cp-file').click()" title="Importa file ChordPro (.cho/.pro), anche multi-brano">📄 ChordPro</span>
+      <span class="btn" onclick="cpExportSetlist()" title="Esporta la vista corrente (scaletta o libreria) in un unico file ChordPro">⤓ Scaletta</span>
       <span class="btn" onclick="edExport()" title="Esporta le tue modifiche (JSON)">⬇︎ Esporta</span>
       <span class="btn" onclick="document.getElementById('imp-file').click()" title="Importa modifiche (JSON)">⬆︎ Importa</span>
     </div>
@@ -1294,7 +1295,18 @@ window.CHORDS_DB={guitar:{"main":{"strings":6,"fretsOnChord":4,"name":"guitar"},
     return song;
   }
 
-  window.ChordPro = { format: format, parse: parse };
+  window.ChordPro = { format: format, parse: parse, formatMany: formatMany, parseMany: parseMany };
+
+  // ---- MULTI-brano (una scaletta in un unico file) ----
+  function formatMany(songs) {
+    return (songs || []).map(format).join('\n{new_song}\n\n');
+  }
+  function parseMany(text) {
+    var chunks = String(text).split(/^[ \t]*\{[ \t]*(?:new_song|ns)[ \t]*\}[ \t]*$/m);
+    var out = [];
+    chunks.forEach(function (c) { if (c.trim() !== '') out.push(parse(c)); });
+    return out.length ? out : [parse(text)];
+  }
 })();
 
 </script>
@@ -2062,7 +2074,7 @@ var userStore = loadStore();   // { id: songObject } — override + brani nuovi 
 var SONGS = [];
 rebuildSongs();
 
-var state = { sel: null, transpose: 0, instrument: 'guitar', showAll: true, filter: '', setlist: '', italian: false, editing: false, live: false, annot: false, chordFs: 0 };
+var state = { sel: null, transpose: 0, instrument: 'guitar', showAll: true, filter: '', setlist: '', italian: false, editing: false, live: false, annot: false, chordFs: 0, scrollOn: false, scrollSpeed: 1 };
 
 function escHtml(v){ return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
@@ -2194,6 +2206,7 @@ function buildSidebar(){
 
 /* ================= MAIN RENDER ================= */
 function pick(id){
+  if(state.scrollOn) autoStop();
   state.sel = id; state.transpose = 0; state.editing = false; edModel = null;
   buildSidebar(); render(); closeMenu();
   document.getElementById('main').scrollTop = 0;
@@ -2473,6 +2486,8 @@ function liveBarHTML(s){
     '<span class="lb-btn'+(state.italian?' on':'')+'" onclick="toggleNotation()" title="Notazione note">'+(state.italian?'Do':'C')+'</span>'+
     '<span class="lb-btn" onclick="setChordFs(-3)" title="Riduci testo">A−</span>'+
     '<span class="lb-btn" onclick="setChordFs(3)" title="Ingrandisci testo">A+</span>'+
+    '<span class="lb-btn'+(state.scrollOn?' on':'')+'" id="lb-play" onclick="autoToggle()" title="Scorrimento automatico (barra spaziatrice)">'+(state.scrollOn?'⏸':'⏵')+'</span>'+
+    '<span class="lb-btn" id="lb-speed" onclick="autoSpeed()" title="Velocità di scorrimento">'+state.scrollSpeed+'×</span>'+
     '<span class="lb-btn" onclick="liveNav(1)" title="Brano successivo">▶</span>'+
     '<span class="lb-btn exit" onclick="toggleLive()" title="Esci da Live">✕</span>'+
   '</div>';
@@ -2489,6 +2504,50 @@ function liveNav(dir){
 
 function applyChordFs(){ document.documentElement.style.setProperty('--chord-fs', (state.chordFs||34)+'px'); }
 function setChordFs(d){ state.chordFs = Math.max(16, Math.min(96, (state.chordFs||34)+d)); applyChordFs(); }
+
+/* ---- scorrimento automatico (Live) ---- */
+var AS_SPEEDS = [0.5, 1, 1.5, 2, 3], AS_BASE = 26; // px/sec a 1x
+var _as = { raf: null, last: 0, acc: 0 };
+function autoUpdateBtns(){
+  var p = document.getElementById('lb-play');
+  if(p){ p.textContent = state.scrollOn ? '⏸' : '⏵'; p.classList.toggle('on', state.scrollOn); }
+  var s = document.getElementById('lb-speed');
+  if(s){ s.textContent = state.scrollSpeed + '×'; }
+}
+function autoStep(ts){
+  if(!state.scrollOn) return;
+  var m = document.getElementById('main'); if(!m){ autoStop(); return; }
+  if(!_as.last) _as.last = ts;
+  var dt = Math.min(0.05, (ts - _as.last)/1000); _as.last = ts;
+  _as.acc += AS_BASE * state.scrollSpeed * dt;
+  var whole = Math.floor(_as.acc);
+  if(whole >= 1){ m.scrollTop += whole; _as.acc -= whole; }
+  if(m.scrollTop + m.clientHeight >= m.scrollHeight - 1){ autoStop(); return; } // fine pagina
+  _as.raf = requestAnimationFrame(autoStep);
+}
+function autoStart(){
+  if(state.scrollOn) return;
+  state.scrollOn = true; _as.last = 0; _as.acc = 0;
+  _as.raf = requestAnimationFrame(autoStep);
+  autoUpdateBtns();
+}
+function autoStop(){
+  state.scrollOn = false;
+  if(_as.raf) cancelAnimationFrame(_as.raf);
+  _as.raf = null; autoUpdateBtns();
+}
+function autoToggle(){ state.scrollOn ? autoStop() : autoStart(); }
+function autoSpeed(){
+  var i = AS_SPEEDS.indexOf(state.scrollSpeed);
+  state.scrollSpeed = AS_SPEEDS[(i + 1) % AS_SPEEDS.length];
+  _as.last = 0; autoUpdateBtns();
+}
+document.addEventListener('keydown', function(e){
+  if(!state.live || !e || e.code !== 'Space') return;
+  var t = (e.target && e.target.tagName) || '';
+  if(/INPUT|TEXTAREA|SELECT/.test(t)) return;
+  e.preventDefault(); autoToggle();
+});
 
 /* mantiene lo schermo acceso durante il live (dove supportato) */
 var _wake = null;
@@ -2510,6 +2569,7 @@ function toggleLive(){
     if(!state.sel){ var l=currentSongList(); if(l.length) state.sel=l[0].id; }
   } else {
     document.documentElement.style.removeProperty('--chord-fs');
+    if(state.scrollOn) autoStop();
     releaseWake();
   }
   render();
@@ -2702,16 +2762,34 @@ function cpImportFile(file){
   var r = new FileReader();
   r.onload = function(){
     try {
-      var song = ChordPro.parse(r.result);
-      if(!song.title) song.title = file.name.replace(/\.[^.]+$/,'') || 'Brano importato';
-      song.id = edUniqueId(song.id || 'brano-importato');
-      userStore[song.id] = song; saveStore(); rebuildSongs();
+      var songs = ChordPro.parseMany(r.result);
+      var first = null;
+      songs.forEach(function(song, i){
+        if(!song.title) song.title = (songs.length>1 ? file.name.replace(/\.[^.]+$/,'')+' '+(i+1) : file.name.replace(/\.[^.]+$/,'')) || 'Brano importato';
+        song.id = edUniqueId(song.id || 'brano-importato');
+        userStore[song.id] = song;
+        if(!first) first = song.id;
+      });
+      saveStore(); rebuildSongs();
       state.setlist = ''; var sl=document.getElementById('setlist'); if(sl) sl.value='';
-      pick(song.id);
-      alert('Importato da ChordPro: '+song.title);
+      if(first) pick(first);
+      alert(songs.length>1 ? ('Importati '+songs.length+' brani da ChordPro.') : ('Importato da ChordPro: '+songs[0].title));
     } catch(e){ alert('File ChordPro non valido.'); }
   };
   r.readAsText(file);
+}
+function cpExportSetlist(){
+  if(!window.ChordPro) return;
+  var list = currentSongList();
+  if(!list.length){ alert('Nessun brano da esportare.'); return; }
+  var sl = state.setlist ? setlistById(state.setlist) : null;
+  var name = sl ? sl.name : 'libreria';
+  var blob = new Blob([ChordPro.formatMany(list)], {type:'text/plain'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'') + '.cho';
+  document.body.appendChild(a); a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 100);
 }
 
 /* ================= POPOVER (click chord -> diagram) ================= */

@@ -99,5 +99,16 @@
     return song;
   }
 
-  window.ChordPro = { format: format, parse: parse };
+  window.ChordPro = { format: format, parse: parse, formatMany: formatMany, parseMany: parseMany };
+
+  // ---- MULTI-brano (una scaletta in un unico file) ----
+  function formatMany(songs) {
+    return (songs || []).map(format).join('\n{new_song}\n\n');
+  }
+  function parseMany(text) {
+    var chunks = String(text).split(/^[ \t]*\{[ \t]*(?:new_song|ns)[ \t]*\}[ \t]*$/m);
+    var out = [];
+    chunks.forEach(function (c) { if (c.trim() !== '') out.push(parse(c)); });
+    return out.length ? out : [parse(text)];
+  }
 })();
