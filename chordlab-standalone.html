@@ -2519,6 +2519,20 @@ function dispChord(s, sym){
   catch(e){ return sym; }
 }
 
+/* ---- token di una misura con durata opzionale ----
+   Ogni accordo può avere un peso "*N" (intero, default 1) che ne fissa la durata
+   relativa dentro la battuta: "C*3 G" -> C occupa 3/4, G 1/4; "Am D7" -> 1/2+1/2. */
+function barTokens(bar){
+  return String(bar).trim().split(/\s+/).filter(Boolean).map(function(tok){
+    var m = /^(.+?)\*(\d+)$/.exec(tok);
+    if(m) return { sym: m[1], weight: Math.max(1, parseInt(m[2],10)||1) };
+    return { sym: tok, weight: 1 };
+  });
+}
+function barWeightTotal(toks){
+  var t = 0; toks.forEach(function(x){ t += x.weight; }); return t || 1;
+}
+
 /* ---- pretty chord HTML (superscript the suffix) ---- */
 function chordHTML(sym){
   var p = E.parse(sym);
@@ -2536,9 +2550,8 @@ function uniqueChords(s){
   var seen = {}, out = [];
   s.sections.forEach(function(sec){
     (sec.bars||[]).forEach(function(bar){
-      String(bar).trim().split(/\s+/).forEach(function(tok){
-        if(!tok) return;
-        var d = dispChord(s, tok);
+      barTokens(bar).forEach(function(tok){
+        var d = dispChord(s, tok.sym);
         if(!seen[d]){ seen[d]=1; out.push(d); }
       });
     });
@@ -2596,18 +2609,19 @@ function toggleAll(){ state.showAll = !state.showAll; render(); }
 function toggleSubdiv(){ state.subdiv = !state.subdiv; render(); }
 
 /* ================= PLAYER AUDIO (Web Audio) ================= */
-// Costruisce la sequenza da suonare: ogni misura dura 4 beat, suddivisi in parti
-// uguali tra gli accordi della misura (1 accordo = 4 beat, 2 = 2+2, 4 = 1+1+1+1).
+// Costruisce la sequenza da suonare: ogni misura dura 4 beat, ripartiti tra gli
+// accordi in proporzione al loro peso (durata). 1 accordo = 4 beat; "Am D7" =
+// 2+2; "C*3 G" = 3+1; "G7 C7 A7 Dm" = 1+1+1+1.
 function buildSchedule(s){
   var out = [], beatsPerBar = 4;
   s.sections.forEach(function(sec, si){
     (sec.bars||[]).forEach(function(bar, bi){
-      var toks = String(bar).trim().split(/\s+/).filter(Boolean);
+      var toks = barTokens(bar);
       if(!toks.length){ out.push({ pcs:[], bass:null, beats:beatsPerBar, cell:null }); return; }
-      var per = beatsPerBar / toks.length;
+      var total = barWeightTotal(toks);
       toks.forEach(function(t, ci){
-        var p = E.parse(dispChord(s, t));
-        out.push({ pcs: p?p.pcs.slice():[], bass:(p&&p.bassPc!=null)?p.bassPc:null, beats:per, cell: si+':'+bi+':'+ci });
+        var p = E.parse(dispChord(s, t.sym));
+        out.push({ pcs: p?p.pcs.slice():[], bass:(p&&p.bassPc!=null)?p.bassPc:null, beats: beatsPerBar*t.weight/total, cell: si+':'+bi+':'+ci });
       });
     });
   });
@@ -2716,14 +2730,15 @@ function render(){
     (sec.bars||[]).forEach(function(bar, bi){
       var key = si+':'+bi;
       var a = aBars[key];
-      var toks = String(bar).trim().split(/\s+/).filter(Boolean);
-      var cls = 'bar' + (toks.length ? '' : ' empty');
-      // Suddivisione: più accordi nella stessa misura -> celle uguali separate da
-      // una stanghetta interna (es. 2 accordi = metà/metà, 4 = quarti).
-      if(state.subdiv && toks.length>1) cls += ' subdiv';
+      var toks = barTokens(bar);
+      var sub = state.subdiv && toks.length>1;
+      var cls = 'bar' + (toks.length ? '' : ' empty') + (sub ? ' subdiv' : '');
+      // Suddivisione: più accordi nella stessa misura -> celle separate da una
+      // stanghetta interna, larghe in proporzione alla durata (peso "*N").
       var style = (a && a.c) ? ' style="background:'+a.c+';border-color:'+a.c+'"' : '';
       var inner = toks.map(function(t, ci){
-        return '<span class="cell" data-cell="'+si+':'+bi+':'+ci+'">'+chordHTML(dispChord(s,t))+'</span>';
+        var cstyle = (sub && t.weight>1) ? ' style="flex-grow:'+t.weight+'"' : '';
+        return '<span class="cell" data-cell="'+si+':'+bi+':'+ci+'"'+cstyle+'>'+chordHTML(dispChord(s,t.sym))+'</span>';
       }).join('');
       var note = (a && a.n) ? '<span class="bar-note">'+escHtml(a.n)+'</span>' : '';
       html += '<div class="'+cls+'" data-k="'+key+'"'+style+'>'+inner+note+'</div>';
@@ -2922,13 +2937,14 @@ function abcGenerate(){
   var sec = s.sections[abcCurSec]; if(!sec){ return; }
   var useFlats = E.keyUsesFlats(s.key);
   var bars = (sec.bars||[]).map(function(bar){
-    var toks = String(bar).trim().split(/\s+/).filter(Boolean);
+    var toks = barTokens(bar);
     if(!toks.length) return 'z4';
-    var n = toks.length;
-    var isInt = (4 % n === 0), per = 4 / n;
+    var total = barWeightTotal(toks);
     return toks.map(function(t){
-      var p = E.parse(t);
-      var len = isInt ? (per>1?String(per):'') : ('4/'+n);
+      // durata in unità di L:1/4 = 4*peso/totale (intera o frazione ABC)
+      var num = 4 * t.weight, den = total;
+      var len = (num % den === 0) ? ((num/den) > 1 ? String(num/den) : '') : (num + '/' + den);
+      var p = E.parse(t.sym);
       if(!p) return 'z'+len;
       var nm = E.noteName(p.rootPc, useFlats);
       var acc = nm.indexOf('#')>=0 ? '^' : (nm.indexOf('b')>=0 ? '_' : '');
@@ -3098,6 +3114,8 @@ function renderEditor(){
     '<div class="editor">'+
     '<div class="ed-hint">Ogni <b>riga</b> di una sezione è <b>una misura</b>. Più accordi nella stessa misura: '+
     'separali con uno spazio (es. <code>Dm/C Bbmaj7 C7</code>). Lascia una riga vuota per una misura vuota.<br>'+
+    '<b>Durata</b>: aggiungi <code>*N</code> a un accordo per dargli un peso (default 1). '+
+    'Es. <code>C*3 G7</code> = C per 3/4 e G7 per 1/4; <code>Am D7</code> = metà e metà.<br>'+
     'Formato simboli accettati da ChordLab: <code>C&nbsp; Em7&nbsp; A7&nbsp; Dm/C&nbsp; Bbmaj7&nbsp; A7sus4</code>.</div>'+
     '<div class="ed-meta">'+
       '<label>Titolo<input id="ed-title" value="'+edAttr(m.title)+'"></label>'+
@@ -3163,7 +3181,7 @@ function edValidate(ta){
   var bad = [];
   edTextToBars(ta.value).forEach(function(bar){
     if(!bar) return;
-    bar.split(/\s+/).filter(Boolean).forEach(function(tok){ if(!E.parse(tok) && bad.indexOf(tok)<0) bad.push(tok); });
+    barTokens(bar).forEach(function(t){ if(!E.parse(t.sym) && bad.indexOf(t.sym)<0) bad.push(t.sym); });
   });
   warn.textContent = bad.length ? ('⚠ Simboli non riconosciuti: '+bad.join(', ')) : '';
 }

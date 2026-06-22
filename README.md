@@ -127,12 +127,22 @@ build per aggiornare lo standalone.
 
 ## Suddivisione delle battute (lead-sheet)
 Quando una misura contiene **più accordi** (separati da spazio in `bars`), la griglia li
-mostra in **celle di uguale durata** all'interno della stessa stanghetta, in stile *iReal Pro*:
-2 accordi = metà/metà, 4 accordi = quarti, ecc. Il bordo esterno della cella è la
-**stanghetta di battuta**; i separatori interni (tratteggiati) marcano la suddivisione.
-Il pulsante **📐 Suddividi** nei controlli attiva/disattiva questa visualizzazione (di default
-attiva); spento, gli accordi tornano affiancati nella battuta. La modalità è rispettata anche
-in **Live** e in **stampa**.
+mostra in **celle** all'interno della stessa stanghetta, in stile *iReal Pro*. Per default le
+celle hanno **uguale durata** (2 accordi = metà/metà, 4 = quarti), ma ogni accordo può avere una
+**durata personalizzata** con il suffisso `*N` (peso intero, default 1):
+
+```js
+{ name: 'Verse', bars: ['C*3 G7', 'Am D7', 'F'] }
+//  C dura 3/4 e G7 1/4 · Am e D7 metà ciascuno · F intera misura
+```
+
+Le celle vengono disegnate **proporzionali al peso** e il bordo esterno è la **stanghetta di
+battuta**; i separatori interni (tratteggiati) marcano la suddivisione. Il pulsante **📐 Suddividi**
+nei controlli attiva/disattiva questa visualizzazione (di default attiva); spento, gli accordi
+tornano affiancati nella battuta. La durata `*N` è riconosciuta anche dall'**editor in-app**, dal
+**player audio** e dal generatore di pentagramma; il peso non altera il simbolo dell'accordo
+(trasposizione, diagrammi e popover restano corretti). La modalità è rispettata anche in **Live**
+e in **stampa**.
 
 ## Player audio (ascolto accordi)
 Il pannello **🎧 Ascolta** sotto i controlli riproduce la progressione del brano con un piccolo
