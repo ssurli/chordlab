@@ -68,9 +68,24 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,-ap
 .bars{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
 .bar{background:var(--bg2);border:1px solid var(--border2);border-radius:5px;min-height:46px;display:flex;align-items:center;justify-content:center;gap:9px;padding:6px 4px;flex-wrap:wrap}
 .bar.empty{background:repeating-linear-gradient(45deg,var(--bg),var(--bg) 6px,var(--bg2) 6px,var(--bg2) 12px);opacity:.5}
+.cell{display:flex;align-items:center;justify-content:center;padding:0 2px}
+/* Suddivisione misura: celle uguali separate da una stanghetta interna tratteggiata */
+.bar.subdiv{gap:0;padding:0;flex-wrap:wrap;align-items:stretch}
+.bar.subdiv .cell{flex:1 1 0;min-width:0;min-height:46px;padding:6px 2px;border-left:1px dashed var(--border2)}
+.bar.subdiv .cell:first-child{border-left:none}
+.bar.subdiv .bar-note{border-left:none;flex-basis:100%}
+.bar.playing{outline:2px solid var(--accent);outline-offset:-2px}
+.cell.playing{background:rgba(200,164,90,.20);border-radius:4px}
 .chord{font-size:var(--chord-fs,16px);font-weight:600;color:var(--accent2);cursor:pointer;border-bottom:1px dotted transparent;transition:color .1s}
 .chord:hover{color:#fff;border-bottom-color:var(--accent)}
 .chord sup{font-size:.6em}
+/* TRANSPORT (player audio) */
+.transport{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:0 0 22px;padding:10px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:8px}
+.transport .ctl-label{margin-right:2px}
+.transport .play-btn{font-size:15px;min-width:46px;text-align:center}
+.transport .play-btn.on{background:var(--accent);border-color:var(--accent);color:#1a1a1a;font-weight:700}
+.transport input[type=range]{width:120px;accent-color:var(--accent)}
+.bpm-val{font-size:13px;font-weight:700;color:var(--accent);min-width:54px}
 
 /* CHORD STRIP (all diagrams) */
 .diag-section{margin-top:8px}
@@ -129,7 +144,9 @@ body.live .section:first-of-type{margin-top:14px}
 body.live .section-label{font-size:14px;padding:5px 14px;margin-bottom:12px}
 body.live .bars{gap:10px}
 body.live .bar{min-height:74px;background:#000;border-color:#3a3a3a}
+body.live .bar.subdiv .cell{min-height:74px;border-left-color:#3a3a3a}
 body.live .chord{color:#fff;font-weight:700}
+body.live .transport{display:none}
 body.live #livebar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;position:sticky;top:0;z-index:120;
   padding:10px 12px;background:rgba(10,10,10,.97);border-bottom:1px solid var(--border)}
 #livebar .lb-title{font-size:17px;font-weight:700;color:var(--accent2);flex:1;min-width:90px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -164,6 +181,9 @@ body.annotate .bar:hover{outline:2px dashed var(--accent);outline-offset:-2px}
 #abcmodal.show{display:flex}
 .abc-box{background:var(--bg2);border:1px solid var(--accent);border-radius:12px;padding:16px;width:min(700px,94vw);max-height:92vh;overflow:auto}
 .abc-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;color:var(--accent2);font-size:14px}
+.abc-tools{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:8px}
+.abc-tools .btn.sm{font-family:monospace}
+.tool-sep{width:1px;align-self:stretch;background:var(--border2);margin:0 2px}
 .abc-x{cursor:pointer;font-size:20px;color:var(--text3)}
 #abc-text{width:100%;height:120px;background:var(--bg);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:monospace;font-size:13px;padding:8px;outline:none;resize:vertical}
 #abc-preview{background:#fff;border-radius:8px;margin:10px 0;padding:6px;min-height:60px;overflow-x:auto}
@@ -207,9 +227,11 @@ body.annotate .bar:hover{outline:2px dashed var(--accent);outline-offset:-2px}
 
 @media print{
   body{display:block;height:auto;background:#fff;color:#000}
-  #sidebar,#topbar,#overlay,.controls .inst-btn,#popover{display:none!important}
+  #sidebar,#topbar,#overlay,.controls .inst-btn,#popover,.transport{display:none!important}
   #main{max-width:100%;padding:14px;overflow:visible}
   .bar{background:#f7f7f7;border:1px solid #ccc}
+  .bar.subdiv .cell{border-left:1px dashed #aaa}
+  .bar.subdiv .cell:first-child{border-left:none}
   .chord{color:#1a1a1a}
   .section-label{color:#000!important;background:#eee!important}
 }
@@ -246,7 +268,7 @@ body.annotate .bar:hover{outline:2px dashed var(--accent);outline-offset:-2px}
     <input id="search" type="search" placeholder="Cerca brano, artista, tag…" autocomplete="off">
     <div id="lib-tools">
       <span class="btn" onclick="edNewSong()" title="Crea un nuovo brano">➕ Nuovo</span>
-      <span class="btn" onclick="document.getElementById('cp-file').click()" title="Importa file ChordPro (.cho/.pro), anche multi-brano">📄 ChordPro</span>
+      <span class="btn" onclick="document.getElementById('cp-file').click()" title="Importa file ChordPro (.cho/.pro) o foglio accordi (.crd/.txt), anche multi-brano">📄 Importa accordi</span>
       <span class="btn" onclick="cpExportSetlist()" title="Esporta la vista corrente (scaletta o libreria) in un unico file ChordPro">⤓ Scaletta</span>
       <span class="btn" onclick="edExport()" title="Esporta le tue modifiche (JSON)">⬇︎ Esporta</span>
       <span class="btn" onclick="document.getElementById('imp-file').click()" title="Importa modifiche (JSON)">⬆︎ Importa</span>
@@ -283,6 +305,18 @@ body.annotate .bar:hover{outline:2px dashed var(--accent);outline-offset:-2px}
 <div id="abcmodal" onclick="if(event.target===this)abcClose()">
   <div class="abc-box">
     <div class="abc-head"><b>🎵 Pentagramma (notazione ABC)</b><span class="abc-x" onclick="abcClose()">×</span></div>
+    <div class="abc-tools">
+      <span class="btn sm" onclick="abcGenerate()" title="Crea un pentagramma di base dagli accordi di questa sezione">🎼 Genera dagli accordi</span>
+      <span class="tool-sep"></span>
+      <span class="btn sm" onclick="abcInsert('C ')" title="Inserisci nota">C</span>
+      <span class="btn sm" onclick="abcInsert('z ')" title="Pausa">z</span>
+      <span class="btn sm" onclick="abcInsert('2')" title="Raddoppia durata (metà)">×2</span>
+      <span class="btn sm" onclick="abcInsert('/2')" title="Dimezza durata (croma)">÷2</span>
+      <span class="btn sm" onclick="abcInsert('^')" title="Diesis">♯</span>
+      <span class="btn sm" onclick="abcInsert('_')" title="Bemolle">♭</span>
+      <span class="btn sm" onclick="abcInsert(' | ')" title="Stanghetta di battuta">|</span>
+      <span class="btn sm" onclick="abcInsert('\\n')" title="A capo (nuova riga)">⏎</span>
+    </div>
     <textarea id="abc-text" spellcheck="false" oninput="abcPreview()"></textarea>
     <div id="abc-preview"></div>
     <div class="abc-actions">
@@ -290,7 +324,7 @@ body.annotate .bar:hover{outline:2px dashed var(--accent);outline-offset:-2px}
       <span class="btn" onclick="abcClose()">Annulla</span>
       <span class="btn danger" onclick="abcRemove()">Rimuovi</span>
     </div>
-    <div class="abc-hint"><code>K:</code> tonalità · <code>M:</code> metro · note <code>C D E F G A B</code> (minuscole = ottava sopra) · <code>z</code> pausa · <code>|</code> battuta · <code>2</code> dopo la nota = durata. Guida completa: abcnotation.com</div>
+    <div class="abc-hint"><code>K:</code> tonalità · <code>M:</code> metro · note <code>C D E F G A B</code> (minuscole = ottava sopra) · <code>z</code> pausa · <code>|</code> battuta · <code>2</code> dopo la nota = durata. Usa <b>🎼 Genera dagli accordi</b> per partire da uno scheletro. Guida completa: abcnotation.com</div>
   </div>
 </div>
 
@@ -1387,6 +1421,133 @@ window.CHORDS_DB={guitar:{"main":{"strings":6,"fretsOnChord":4,"name":"guitar"},
 
 </script>
 <script>
+// crd.js — import di file .crd / chord-sheet in testo semplice (zero dipendenze)
+// Un .crd è un foglio accordi "chords over lyrics": righe di soli accordi
+// alternate a righe di testo. Questo modulo riconosce le righe-accordo e le
+// converte nel modello ChordLab (sezioni di misure), senza le liriche.
+// Espone window.CrdImport = { parse(text) -> song, looksLikeCrd(text) -> bool }.
+(function () {
+  'use strict';
+
+  // Validatore "stretto" di un simbolo accordo. NON usa ChordEngine.parse perché
+  // quello accetta qualunque parola che inizi per A-G (es. "Bed" -> B + "ed").
+  var CHORD_RE = /^[A-G](#|b|♯|♭)?(maj|min|m|dim|aug|sus|add|M|°|ø|Δ|\+|\d|b5|#5|b9|#9|#11|b13|alt|no\d)*(\/[A-G](#|b|♯|♭)?)?$/;
+  var SPECIAL = { 'N.C.': 1, 'NC': 1, '%': 1, '/': 1, '|': 1 };
+
+  function looksLikeChord(tok) {
+    if (!tok) return false;
+    var t = tok.replace(/[(),.;:]+$/, '').replace(/^\(/, '');
+    if (SPECIAL[t.toUpperCase()] || SPECIAL[t]) return true;
+    return CHORD_RE.test(t);
+  }
+
+  // Una riga è "riga accordi" se ha >=1 token e TUTTI i token sembrano accordi.
+  function isChordLine(line) {
+    var toks = line.trim().split(/\s+/).filter(Boolean);
+    if (!toks.length) return false;
+    for (var i = 0; i < toks.length; i++) {
+      if (!looksLikeChord(toks[i])) return false;
+    }
+    return true;
+  }
+
+  // Normalizza un token in un simbolo che ChordEngine sa leggere (pulisce parentesi).
+  function cleanChord(tok) {
+    var t = tok.replace(/[(),.;:]+$/, '').replace(/^\(/, '');
+    if (/^(N\.?C\.?|%|\/|\|)$/i.test(t)) return null; // segnaposti non musicali
+    return t;
+  }
+
+  var SECTION_KW = /^\(?\[?\s*(intro|verse|strofa|chorus|ritornello|rit\.?|bridge|ponte|solo|outro|pre[- ]?chorus|interlude|instrumental|inst\.?|coda|tag|hook|refrain)\b[^\]\)]*\]?\)?\s*:?\s*$/i;
+
+  function headerName(line) {
+    var m = /^\[(.+)\]\s*$/.exec(line.trim());           // [Verse 1]
+    if (m) return m[1].trim();
+    if (SECTION_KW.test(line.trim())) {                    // Chorus:  /  (Intro)
+      return line.trim().replace(/^[\[\(]|[\]\)]$/g, '').replace(/:\s*$/, '').trim();
+    }
+    return null;
+  }
+
+  function slug(str) {
+    return String(str || '').toLowerCase().trim()
+      .replace(/['’"`]/g, '').replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '') || 'brano';
+  }
+
+  function parse(text) {
+    var lines = String(text).replace(/\r\n?/g, '\n').split('\n');
+    var song = { title: '', artist: '', year: '', key: '', capo: 0, tags: [], sections: [] };
+    var cur = null, sawMusic = false;
+
+    function ensure(name) { cur = { name: name || 'Section', bars: [] }; song.sections.push(cur); }
+
+    // Intestazione: prime righe non-vuote prima di accordi/sezioni -> titolo/artista.
+    var idx = 0;
+    for (; idx < lines.length; idx++) {
+      var raw = lines[idx].trim();
+      if (raw === '') continue;
+      if (headerName(raw) || isChordLine(raw)) break;
+      // Direttive in stile metadato: "Key: G", "Capo: 2"
+      var md = /^(key|tonalit[aà]|capo|artist|artista|year|anno|title|titolo)\s*[:=]\s*(.+)$/i.exec(raw);
+      if (md) {
+        var k = md[1].toLowerCase(), v = md[2].trim();
+        if (/key|tonal/.test(k)) song.key = v;
+        else if (k === 'capo') song.capo = parseInt(v, 10) || 0;
+        else if (/artist/.test(k)) song.artist = v;
+        else if (/year|anno/.test(k)) song.year = v;
+        else if (/tit/.test(k)) song.title = v;
+        continue;
+      }
+      if (!song.title) {
+        if (raw.indexOf(' - ') > 0) { var p = raw.split(' - '); song.title = p[0].trim(); song.artist = p.slice(1).join(' - ').trim(); }
+        else song.title = raw;
+      } else if (!song.artist) { song.artist = raw; }
+    }
+
+    for (; idx < lines.length; idx++) {
+      var line = lines[idx].replace(/\s+$/, '');
+      if (line.trim() === '') continue;
+
+      var hn = headerName(line);
+      if (hn) { ensure(hn); continue; }
+
+      if (isChordLine(line)) {
+        if (!cur) ensure('Verse');
+        line.trim().split(/\s+/).forEach(function (tok) {
+          var c = cleanChord(tok);
+          if (c) { cur.bars.push(c); sawMusic = true; }
+        });
+        continue;
+      }
+      // riga di testo (lirica): ignorata — ChordLab è a sole misure.
+    }
+
+    if (!song.sections.length) song.sections.push({ name: 'Verse', bars: [] });
+    if (!song.key && sawMusic) {
+      // Indovina la tonalità dal primo accordo, se non dichiarata.
+      var first = song.sections[0].bars[0];
+      if (first) song.key = first.split('/')[0];
+    }
+    if (!song.key) song.key = 'C';
+    song.id = slug(song.title || 'brano-crd');
+    return song;
+  }
+
+  // Euristica: il testo è un .crd se contiene almeno una riga di soli accordi.
+  function looksLikeCrd(text) {
+    var lines = String(text).split(/\r?\n/);
+    for (var i = 0; i < lines.length; i++) {
+      if (isChordLine(lines[i])) return true;
+    }
+    return false;
+  }
+
+  window.CrdImport = { parse: parse, looksLikeCrd: looksLikeCrd, isChordLine: isChordLine };
+})();
+
+</script>
+<script>
 // ChordLab — songs.js
 // Defines window.SONGS, an array of song objects per CONTRACT.md section 3.
 // Chord symbols use the ChordEngine format (e.g. F, Em7, A7, Dm/C, Bbmaj7, A7sus4).
@@ -2140,6 +2301,145 @@ window.SETLISTS = [
 
 </script>
 <script>
+// player.js — semplice player audio (Web Audio API, zero dipendenze)
+// Riproduce una sequenza di eventi-accordo sintetizzandoli con oscillatori.
+// Espone window.ChordPlayer.
+//   ChordPlayer.play(events, opts)  events: [{ pcs:[int...], bass:int|null }]
+//      opts: { bpm:90, beatsPerEvent:?, onStep(i), onEnd(), metronome:false }
+//      Se l'evento ha { beats:n } usa quella durata, altrimenti beatsPerEvent.
+//   ChordPlayer.stop()
+//   ChordPlayer.isPlaying() -> bool
+(function () {
+  'use strict';
+
+  var ctx = null, master = null;
+  var timers = [];          // setTimeout in coda (per onStep e stop)
+  var nodes = [];           // oscillatori/gain attivi (per stop immediato)
+  var playing = false;
+  var endTimer = null;
+
+  function ensureCtx() {
+    if (!ctx) {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      ctx = new AC();
+      master = ctx.createGain();
+      master.gain.value = 0.9;
+      master.connect(ctx.destination);
+    }
+    if (ctx.state === 'suspended') ctx.resume();
+    return ctx;
+  }
+
+  function midiToFreq(m) { return 440 * Math.pow(2, (m - 69) / 12); }
+
+  // Voicing semplice: chord-tone vicini all'ottava 4, basso un'ottava sotto.
+  // pcs sono pitch-class 0..11. Manteniamo l'ordine "salendo" dalla prima nota.
+  function voicing(ev) {
+    var out = [];
+    var prev = -1;
+    (ev.pcs || []).forEach(function (pc) {
+      var m = 60 + pc;                 // C4 = 60
+      while (m <= prev) m += 12;       // impila salendo per un voicing morbido
+      prev = m;
+      out.push(m);
+    });
+    if (ev.bass != null) out.unshift(48 + ev.bass); // basso in ottava 3
+    return out;
+  }
+
+  // Suona un accordo (block chord) da t0 per dur secondi.
+  function strike(midis, t0, dur, vol) {
+    var peak = (vol == null ? 0.16 : vol);
+    midis.forEach(function (m) {
+      var osc = ctx.createOscillator();
+      var g = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.value = midiToFreq(m);
+      var a = 0.012, rel = Math.min(0.18, dur * 0.4);
+      var sustainEnd = t0 + Math.max(0.05, dur - rel);
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(peak, t0 + a);
+      g.gain.setValueAtTime(peak, sustainEnd);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      osc.connect(g); g.connect(master);
+      osc.start(t0);
+      osc.stop(t0 + dur + 0.02);
+      nodes.push(osc, g);
+    });
+  }
+
+  // Click metronomo (breve impulso).
+  function click(t0, accent) {
+    var osc = ctx.createOscillator(), g = ctx.createGain();
+    osc.type = 'square';
+    osc.frequency.value = accent ? 1600 : 1100;
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(accent ? 0.10 : 0.06, t0 + 0.001);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.05);
+    osc.connect(g); g.connect(master);
+    osc.start(t0); osc.stop(t0 + 0.06);
+    nodes.push(osc, g);
+  }
+
+  function clearTimers() {
+    timers.forEach(clearTimeout); timers = [];
+    if (endTimer) { clearTimeout(endTimer); endTimer = null; }
+  }
+
+  function stop() {
+    playing = false;
+    clearTimers();
+    nodes.forEach(function (n) { try { n.stop ? n.stop() : n.disconnect(); } catch (e) {} });
+    nodes = [];
+    if (ctx) { try { master.disconnect(); } catch (e) {} master = ctx.createGain(); master.gain.value = 0.9; master.connect(ctx.destination); }
+  }
+
+  function isPlaying() { return playing; }
+
+  function play(events, opts) {
+    opts = opts || {};
+    if (!ensureCtx()) { if (opts.onUnsupported) opts.onUnsupported(); return; }
+    stop();
+    if (!events || !events.length) return;
+    playing = true;
+
+    var bpm = Math.max(30, Math.min(280, opts.bpm || 90));
+    var spb = 60 / bpm;                              // secondi per beat
+    var bpe = opts.beatsPerEvent || 4;              // default: 1 misura 4/4 per evento
+    var lead = 0.08;
+    var t = ctx.currentTime + lead;
+    var startWall = Date.now();
+    var startAudio = t;
+
+    events.forEach(function (ev, i) {
+      var beats = (ev.beats != null ? ev.beats : bpe);
+      var dur = beats * spb;
+      var midis = voicing(ev);
+      if (midis.length) strike(midis, t, Math.max(0.12, dur * 0.98));
+      if (opts.metronome) {
+        for (var b = 0; b < Math.round(beats); b++) click(t + b * spb, b === 0);
+      }
+      // onStep allineato al tempo audio, via setTimeout sul wall-clock.
+      (function (idx, when) {
+        var delayMs = (when - startAudio) * 1000 + lead * 1000;
+        timers.push(setTimeout(function () { if (playing && opts.onStep) opts.onStep(idx); }, Math.max(0, delayMs)));
+      })(i, t);
+      t += dur;
+    });
+
+    var totalMs = (t - startAudio) * 1000 + 120;
+    endTimer = setTimeout(function () {
+      playing = false;
+      if (opts.onEnd) opts.onEnd();
+    }, totalMs);
+  }
+
+  window.ChordPlayer = { play: play, stop: stop, isPlaying: isPlaying };
+})();
+
+</script>
+<script>
 'use strict';
 var BASE_SONGS = (window.SONGS || []).map(cloneSong);
 var SETLISTS = window.SETLISTS || [];
@@ -2150,7 +2450,7 @@ var userStore = loadStore();   // { id: songObject } — override + brani nuovi 
 var SONGS = [];
 rebuildSongs();
 
-var state = { sel: null, transpose: 0, instrument: 'guitar', showAll: true, filter: '', setlist: '', italian: false, editing: false, live: false, annot: false, chordFs: 0, scrollOn: false, scrollSpeed: 1 };
+var state = { sel: null, transpose: 0, instrument: 'guitar', showAll: true, filter: '', setlist: '', italian: false, editing: false, live: false, annot: false, chordFs: 0, scrollOn: false, scrollSpeed: 1, subdiv: true, bpm: 90, metronome: false };
 
 function escHtml(v){ return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
@@ -2283,6 +2583,7 @@ function buildSidebar(){
 /* ================= MAIN RENDER ================= */
 function pick(id){
   if(state.scrollOn) autoStop();
+  if(window.ChordPlayer && ChordPlayer.isPlaying()) ChordPlayer.stop();
   state.sel = id; state.transpose = 0; state.editing = false; edModel = null;
   buildSidebar(); render(); closeMenu();
   document.getElementById('main').scrollTop = 0;
@@ -2292,6 +2593,68 @@ function bump(n){ state.transpose = ((state.transpose + n) % 12 + 12) % 12; if(s
 function resetKey(){ state.transpose = 0; render(); }
 function setInstrument(id){ state.instrument = id; render(); }
 function toggleAll(){ state.showAll = !state.showAll; render(); }
+function toggleSubdiv(){ state.subdiv = !state.subdiv; render(); }
+
+/* ================= PLAYER AUDIO (Web Audio) ================= */
+// Costruisce la sequenza da suonare: ogni misura dura 4 beat, suddivisi in parti
+// uguali tra gli accordi della misura (1 accordo = 4 beat, 2 = 2+2, 4 = 1+1+1+1).
+function buildSchedule(s){
+  var out = [], beatsPerBar = 4;
+  s.sections.forEach(function(sec, si){
+    (sec.bars||[]).forEach(function(bar, bi){
+      var toks = String(bar).trim().split(/\s+/).filter(Boolean);
+      if(!toks.length){ out.push({ pcs:[], bass:null, beats:beatsPerBar, cell:null }); return; }
+      var per = beatsPerBar / toks.length;
+      toks.forEach(function(t, ci){
+        var p = E.parse(dispChord(s, t));
+        out.push({ pcs: p?p.pcs.slice():[], bass:(p&&p.bassPc!=null)?p.bassPc:null, beats:per, cell: si+':'+bi+':'+ci });
+      });
+    });
+  });
+  return out;
+}
+function clearHighlight(){
+  document.querySelectorAll('.cell.playing,.bar.playing').forEach(function(el){ el.classList.remove('playing'); });
+}
+function highlightCell(cellKey){
+  clearHighlight();
+  if(!cellKey) return;
+  var el = document.querySelector('.cell[data-cell="'+cellKey+'"]');
+  if(!el) return;
+  el.classList.add('playing');
+  var bar = el.closest('.bar'); if(bar){ bar.classList.add('playing'); if(bar.scrollIntoView) bar.scrollIntoView({block:'nearest'}); }
+}
+function refreshTransport(){
+  var old = document.querySelector('.transport');
+  if(old){ var tmp=document.createElement('div'); tmp.innerHTML=transportHTML(); if(tmp.firstChild) old.replaceWith(tmp.firstChild); }
+}
+function transportHTML(){
+  var playing = window.ChordPlayer && ChordPlayer.isPlaying();
+  return '<div class="transport">'+
+    '<span class="ctl-label">🎧 Ascolta</span>'+
+    '<span class="btn play-btn'+(playing?' on':'')+'" onclick="playToggle()" title="Riproduci/ferma gli accordi del brano">'+(playing?'⏸ Ferma':'▶ Play')+'</span>'+
+    '<span class="ctl-label">Tempo</span>'+
+    '<input type="range" min="40" max="220" value="'+state.bpm+'" oninput="setBpm(this.value)" title="Velocità (BPM)">'+
+    '<span class="bpm-val" id="bpm-val">'+state.bpm+' BPM</span>'+
+    '<span class="btn'+(state.metronome?' inst-btn active':'')+'" onclick="toggleMetro()" title="Attiva/disattiva il click del metronomo">🥁 Metro</span>'+
+  '</div>';
+}
+function setBpm(v){ state.bpm = Math.max(40, Math.min(220, +v||90)); var el=document.getElementById('bpm-val'); if(el) el.textContent = state.bpm+' BPM'; }
+function toggleMetro(){ state.metronome = !state.metronome; refreshTransport(); }
+function playToggle(){ if(window.ChordPlayer && ChordPlayer.isPlaying()){ stopPlay(); } else { playSong(); } }
+function playSong(){
+  var s = songById(state.sel); if(!s || !window.ChordPlayer) return;
+  var sched = buildSchedule(s);
+  if(!sched.length) return;
+  ChordPlayer.play(sched, {
+    bpm: state.bpm, metronome: state.metronome,
+    onStep: function(i){ highlightCell(sched[i] && sched[i].cell); },
+    onEnd: function(){ clearHighlight(); refreshTransport(); },
+    onUnsupported: function(){ alert('Audio non supportato da questo browser.'); }
+  });
+  refreshTransport();
+}
+function stopPlay(){ if(window.ChordPlayer) ChordPlayer.stop(); clearHighlight(); refreshTransport(); }
 
 function render(){
   if(state.editing){ renderEditor(); return; }
@@ -2319,6 +2682,7 @@ function render(){
       '<span class="btn'+(state.italian?' inst-btn active':'')+'" onclick="toggleNotation()">'+(state.italian?'Do Re Mi':'C D E')+'</span></div>'+
     '<div class="ctl-group" style="margin-left:auto"><span class="ctl-label">Strumento</span>'+instBtns+'</div>'+
     '<span class="btn" onclick="toggleAll()">'+(state.showAll?'Nascondi':'Mostra')+' diagrammi</span>'+
+    '<span class="btn'+(state.subdiv?' inst-btn active':'')+'" onclick="toggleSubdiv()" title="Suddividi graficamente le battute in base al numero di accordi">📐 Suddividi</span>'+
     '<span class="btn" onclick="edEdit()">✏️ Modifica</span>'+
     '<span class="btn'+(state.annot?' inst-btn active':'')+'" onclick="toggleAnnotate()">🖍 Annota</span>'+
     '<span class="btn" onclick="toggleLive()">🎤 Live</span>'+
@@ -2329,6 +2693,7 @@ function render(){
     html += '<div class="annot-hint">🖍 Modalità annotazioni attiva — tocca una <b>battuta</b> per colorarla o aggiungere una nota. '+
       'Usa <b>🎼 Spartito</b> (scrivi un pentagramma o importa un\'immagine) e <b>📝 Nota</b> accanto al nome di una sezione.</div>';
   }
+  html += transportHTML();
 
   // sections
   var anno = s.anno || {};
@@ -2353,8 +2718,13 @@ function render(){
       var a = aBars[key];
       var toks = String(bar).trim().split(/\s+/).filter(Boolean);
       var cls = 'bar' + (toks.length ? '' : ' empty');
+      // Suddivisione: più accordi nella stessa misura -> celle uguali separate da
+      // una stanghetta interna (es. 2 accordi = metà/metà, 4 = quarti).
+      if(state.subdiv && toks.length>1) cls += ' subdiv';
       var style = (a && a.c) ? ' style="background:'+a.c+';border-color:'+a.c+'"' : '';
-      var inner = toks.map(function(t){ return chordHTML(dispChord(s,t)); }).join('');
+      var inner = toks.map(function(t, ci){
+        return '<span class="cell" data-cell="'+si+':'+bi+':'+ci+'">'+chordHTML(dispChord(s,t))+'</span>';
+      }).join('');
       var note = (a && a.n) ? '<span class="bar-note">'+escHtml(a.n)+'</span>' : '';
       html += '<div class="'+cls+'" data-k="'+key+'"'+style+'>'+inner+note+'</div>';
     });
@@ -2534,6 +2904,42 @@ function abcEdit(si){
 function abcPreview(){
   if(!window.ABCJS) return;
   try { ABCJS.renderAbc('abc-preview', document.getElementById('abc-text').value, { responsive:'resize' }); } catch(e){}
+}
+// Inserisce testo nella posizione del cursore dell'editor ABC.
+function abcInsert(t){
+  if(t==='\\n') t='\n';
+  var ta = document.getElementById('abc-text');
+  var s = ta.selectionStart, e = ta.selectionEnd;
+  if(s==null){ s = e = ta.value.length; }
+  ta.value = ta.value.slice(0,s) + t + ta.value.slice(e);
+  ta.focus(); var pos = s + t.length; ta.setSelectionRange(pos,pos);
+  abcPreview();
+}
+// Genera uno scheletro di pentagramma dagli accordi della sezione corrente:
+// la fondamentale di ogni accordo, con durata proporzionale alla suddivisione.
+function abcGenerate(){
+  var s = songById(state.sel); if(!s || abcCurSec==null) return;
+  var sec = s.sections[abcCurSec]; if(!sec){ return; }
+  var useFlats = E.keyUsesFlats(s.key);
+  var bars = (sec.bars||[]).map(function(bar){
+    var toks = String(bar).trim().split(/\s+/).filter(Boolean);
+    if(!toks.length) return 'z4';
+    var n = toks.length;
+    var isInt = (4 % n === 0), per = 4 / n;
+    return toks.map(function(t){
+      var p = E.parse(t);
+      var len = isInt ? (per>1?String(per):'') : ('4/'+n);
+      if(!p) return 'z'+len;
+      var nm = E.noteName(p.rootPc, useFlats);
+      var acc = nm.indexOf('#')>=0 ? '^' : (nm.indexOf('b')>=0 ? '_' : '');
+      return acc + nm.charAt(0) + len;
+    }).join(' ');
+  });
+  var body = '';
+  for(var i=0;i<bars.length;i+=4){ body += bars.slice(i,i+4).join(' | ') + ' |\n'; }
+  document.getElementById('abc-text').value =
+    'X:1\nM:4/4\nL:1/4\nK:'+(s.key||'C')+'\n' + (body || 'z4 |\n');
+  abcPreview();
 }
 function abcSave(){
   if(abcCurSec==null) return;
@@ -2865,7 +3271,17 @@ function cpImportFile(file){
   var r = new FileReader();
   r.onload = function(){
     try {
-      var songs = ChordPro.parseMany(r.result);
+      var txt = r.result;
+      var isCrdExt = /\.crd$/i.test(file.name);
+      // Un file ChordPro vero ha {direttive} o [accordi] o | misure |. Altrimenti
+      // (es. .crd o testo "accordi sopra le liriche") usiamo il parser CRD.
+      var looksChordPro = /\{[^}]*\}|\[[^\]]+\]|\|/.test(txt);
+      var songs, src;
+      if(window.CrdImport && (isCrdExt || (!looksChordPro && CrdImport.looksLikeCrd(txt)))){
+        songs = [CrdImport.parse(txt)]; src = 'foglio accordi';
+      } else {
+        songs = ChordPro.parseMany(txt); src = 'ChordPro';
+      }
       var first = null;
       songs.forEach(function(song, i){
         if(!song.title) song.title = (songs.length>1 ? file.name.replace(/\.[^.]+$/,'')+' '+(i+1) : file.name.replace(/\.[^.]+$/,'')) || 'Brano importato';
@@ -2876,8 +3292,8 @@ function cpImportFile(file){
       saveStore(); rebuildSongs();
       state.setlist = ''; var sl=document.getElementById('setlist'); if(sl) sl.value='';
       if(first) pick(first);
-      alert(songs.length>1 ? ('Importati '+songs.length+' brani da ChordPro.') : ('Importato da ChordPro: '+songs[0].title));
-    } catch(e){ alert('File ChordPro non valido.'); }
+      alert(songs.length>1 ? ('Importati '+songs.length+' brani da '+src+'.') : ('Importato da '+src+': '+songs[0].title));
+    } catch(e){ alert('File non valido o non riconosciuto.'); }
   };
   r.readAsText(file);
 }

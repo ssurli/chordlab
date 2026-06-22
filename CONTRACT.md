@@ -1,10 +1,33 @@
 # ChordLab — Contratto condiviso tra moduli
 
-App single-page, **vanilla JS**, nessun build step. Tre file JS espongono oggetti
+App single-page, **vanilla JS**, nessun build step. Più file JS espongono oggetti
 globali su `window`. Il file `index.html` li carica in quest'ordine:
-`engine.js` → `instruments.js` → `songs.js` → script UI inline.
+`engine.js` → `instruments.js` → `chordpro.js` → `crd.js` → `songs.js` →
+`player.js` → script UI inline.
 
 Tutto deve funzionare aprendo il file direttamente (`file://`), senza server.
+
+## crd.js → `window.CrdImport`
+
+Import di fogli accordi in testo semplice (`.crd` o "accordi sopra liriche").
+Nessuna dipendenza (validazione accordi con regex propria, non `ChordEngine`).
+
+```js
+CrdImport.parse(text)        // -> song nel modello SONGS (sezioni di misure; liriche ignorate)
+CrdImport.looksLikeCrd(text) // -> bool: c'è almeno una riga di soli accordi?
+CrdImport.isChordLine(line)  // -> bool
+```
+
+## player.js → `window.ChordPlayer`
+
+Player audio con la Web Audio API (sintesi a oscillatori; nessun file audio).
+
+```js
+// events: [{ pcs:[int...], bass:int|null, beats:number }]  (pcs = pitch-class assolute)
+ChordPlayer.play(events, { bpm, metronome, onStep(i), onEnd(), onUnsupported() })
+ChordPlayer.stop()
+ChordPlayer.isPlaying() // -> bool
+```
 
 ---
 
