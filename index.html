@@ -76,6 +76,10 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,-ap
 .bar.subdiv .bar-note{border-left:none;flex-basis:100%}
 .bar.playing{outline:2px solid var(--accent);outline-offset:-2px}
 .cell.playing{background:rgba(200,164,90,.20);border-radius:4px}
+/* Badge metrica impilato (numeratore/denominatore) in stile lead-sheet */
+.timesig{flex:0 0 auto;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;line-height:.82;font-weight:800;font-size:13px;color:var(--accent);padding:0 7px 0 3px;font-family:Georgia,'Times New Roman',serif}
+.bar.has-sig{justify-content:flex-start}
+body.live .timesig{font-size:18px}
 .chord{font-size:var(--chord-fs,16px);font-weight:600;color:var(--accent2);cursor:pointer;border-bottom:1px dotted transparent;transition:color .1s}
 .chord:hover{color:#fff;border-bottom-color:var(--accent)}
 .chord sup{font-size:.6em}
@@ -232,6 +236,7 @@ body.annotate .bar:hover{outline:2px dashed var(--accent);outline-offset:-2px}
   .bar{background:#f7f7f7;border:1px solid #ccc}
   .bar.subdiv .cell{border-left:1px dashed #aaa}
   .bar.subdiv .cell:first-child{border-left:none}
+  .timesig{color:#000}
   .chord{color:#1a1a1a}
   .section-label{color:#000!important;background:#eee!important}
 }
@@ -452,16 +457,38 @@ function dispChord(s, sym){
 
 /* ---- token di una misura con durata opzionale ----
    Ogni accordo può avere un peso "*N" (intero, default 1) che ne fissa la durata
-   relativa dentro la battuta: "C*3 G" -> C occupa 3/4, G 1/4; "Am D7" -> 1/2+1/2. */
-function barTokens(bar){
-  return String(bar).trim().split(/\s+/).filter(Boolean).map(function(tok){
+   relativa dentro la battuta: "C*3 G" -> C occupa 3/4, G 1/4; "Am D7" -> 1/2+1/2.
+   Una misura può iniziare con una METRICA "N/D" (es. "6/8 Dbmaj7") che resta in
+   vigore finché non cambia, in stile iReal Pro. */
+function parseBar(bar){
+  var parts = String(bar).trim().split(/\s+/).filter(Boolean);
+  var meter = null;
+  if(parts.length){
+    var ms = /^\(?\[?(\d{1,2})\/(\d{1,2})\]?\)?$/.exec(parts[0]);
+    if(ms){ meter = ms[1]+'/'+ms[2]; parts.shift(); }
+  }
+  var tokens = parts.map(function(tok){
     var m = /^(.+?)\*(\d+)$/.exec(tok);
     if(m) return { sym: m[1], weight: Math.max(1, parseInt(m[2],10)||1) };
     return { sym: tok, weight: 1 };
   });
+  return { meter: meter, tokens: tokens };
 }
+function barTokens(bar){ return parseBar(bar).tokens; }
 function barWeightTotal(toks){
   var t = 0; toks.forEach(function(x){ t += x.weight; }); return t || 1;
+}
+// Durata totale della battuta in movimenti da 1/4 (4/4=4, 6/8=3, 5/8=2.5...).
+function meterBeats(meter){
+  var m = /^(\d+)\/(\d+)$/.exec(meter||'');
+  if(!m) return 4;
+  var n = +m[1], d = +m[2];
+  return (n && d) ? n * 4 / d : 4;
+}
+// Badge metrica impilato (numeratore sopra denominatore), stile iReal/pentagramma.
+function timeSigHTML(meter){
+  var m = /^(\d+)\/(\d+)$/.exec(meter||''); if(!m) return '';
+  return '<span class="timesig" title="Metrica '+m[1]+'/'+m[2]+'"><span class="ts-num">'+m[1]+'</span><span class="ts-den">'+m[2]+'</span></span>';
 }
 
 /* ---- pretty chord HTML (superscript the suffix) ---- */
@@ -544,10 +571,13 @@ function toggleSubdiv(){ state.subdiv = !state.subdiv; render(); }
 // accordi in proporzione al loro peso (durata). 1 accordo = 4 beat; "Am D7" =
 // 2+2; "C*3 G" = 3+1; "G7 C7 A7 Dm" = 1+1+1+1.
 function buildSchedule(s){
-  var out = [], beatsPerBar = 4;
+  var out = [], runMeter = s.meter || '4/4';
   s.sections.forEach(function(sec, si){
     (sec.bars||[]).forEach(function(bar, bi){
-      var toks = barTokens(bar);
+      var pb = parseBar(bar);
+      if(pb.meter) runMeter = pb.meter;
+      var beatsPerBar = meterBeats(runMeter);
+      var toks = pb.tokens;
       if(!toks.length){ out.push({ pcs:[], bass:null, beats:beatsPerBar, cell:null }); return; }
       var total = barWeightTotal(toks);
       toks.forEach(function(t, ci){
@@ -643,6 +673,8 @@ function render(){
   // sections
   var anno = s.anno || {};
   var aBars = anno.bars || {}, aSecs = anno.sections || {};
+  var runMeter = s.meter || '4/4';   // metrica in vigore (iReal: si mostra solo ai cambi)
+  var shownMeter = null;
   s.sections.forEach(function(sec, si){
     var col = sectionColor(sec.name);
     html += '<div class="section"><span class="section-label" style="background:'+col+'">'+sec.name+'</span>';
@@ -661,9 +693,12 @@ function render(){
     (sec.bars||[]).forEach(function(bar, bi){
       var key = si+':'+bi;
       var a = aBars[key];
-      var toks = barTokens(bar);
+      var pb = parseBar(bar);
+      if(pb.meter) runMeter = pb.meter;            // cambio metrica per questa battuta in poi
+      var sig = (shownMeter !== runMeter) ? (shownMeter = runMeter, timeSigHTML(runMeter)) : '';
+      var toks = pb.tokens;
       var sub = state.subdiv && toks.length>1;
-      var cls = 'bar' + (toks.length ? '' : ' empty') + (sub ? ' subdiv' : '');
+      var cls = 'bar' + (toks.length ? '' : ' empty') + (sub ? ' subdiv' : '') + (sig ? ' has-sig' : '');
       // Suddivisione: più accordi nella stessa misura -> celle separate da una
       // stanghetta interna, larghe in proporzione alla durata (peso "*N").
       var style = (a && a.c) ? ' style="background:'+a.c+';border-color:'+a.c+'"' : '';
@@ -672,7 +707,7 @@ function render(){
         return '<span class="cell" data-cell="'+si+':'+bi+':'+ci+'"'+cstyle+'>'+chordHTML(dispChord(s,t.sym))+'</span>';
       }).join('');
       var note = (a && a.n) ? '<span class="bar-note">'+escHtml(a.n)+'</span>' : '';
-      html += '<div class="'+cls+'" data-k="'+key+'"'+style+'>'+inner+note+'</div>';
+      html += '<div class="'+cls+'" data-k="'+key+'"'+style+'>'+sig+inner+note+'</div>';
     });
     html += '</div></div>';
   });
@@ -862,19 +897,30 @@ function abcInsert(t){
   abcPreview();
 }
 // Genera uno scheletro di pentagramma dagli accordi della sezione corrente:
-// la fondamentale di ogni accordo, con durata proporzionale alla suddivisione.
+// la fondamentale di ogni accordo, con durata proporzionale a metrica e peso;
+// la metrica (anche i cambi) viene riportata nell'header e con [M:N/D] inline.
 function abcGenerate(){
   var s = songById(state.sel); if(!s || abcCurSec==null) return;
   var sec = s.sections[abcCurSec]; if(!sec){ return; }
   var useFlats = E.keyUsesFlats(s.key);
+  // metrica in vigore all'inizio della sezione (scorrendo le sezioni precedenti)
+  var runMeter = s.meter || '4/4';
+  for(var k=0;k<abcCurSec;k++){
+    (s.sections[k].bars||[]).forEach(function(b){ var pm=parseBar(b).meter; if(pm) runMeter=pm; });
+  }
+  var startMeter = runMeter, prevMeter = startMeter;
+  function abcLen(num, den){ return (num % den === 0) ? ((num/den)>1?String(num/den):'') : (num+'/'+den); }
   var bars = (sec.bars||[]).map(function(bar){
-    var toks = barTokens(bar);
-    if(!toks.length) return 'z4';
+    var pb = parseBar(bar);
+    var meter = pb.meter || prevMeter;
+    var changed = (meter !== prevMeter); prevMeter = meter;
+    var mm = /^(\d+)\/(\d+)$/.exec(meter), N = mm?+mm[1]:4, D = mm?+mm[2]:4;
+    var prefix = changed ? ('[M:'+meter+']') : '';
+    var toks = pb.tokens;
+    if(!toks.length) return prefix + 'z' + abcLen(N*4, D);
     var total = barWeightTotal(toks);
-    return toks.map(function(t){
-      // durata in unità di L:1/4 = 4*peso/totale (intera o frazione ABC)
-      var num = 4 * t.weight, den = total;
-      var len = (num % den === 0) ? ((num/den) > 1 ? String(num/den) : '') : (num + '/' + den);
+    return prefix + toks.map(function(t){
+      var len = abcLen(4*N*t.weight, D*total);   // durata in unità di L:1/4
       var p = E.parse(t.sym);
       if(!p) return 'z'+len;
       var nm = E.noteName(p.rootPc, useFlats);
@@ -885,7 +931,7 @@ function abcGenerate(){
   var body = '';
   for(var i=0;i<bars.length;i+=4){ body += bars.slice(i,i+4).join(' | ') + ' |\n'; }
   document.getElementById('abc-text').value =
-    'X:1\nM:4/4\nL:1/4\nK:'+(s.key||'C')+'\n' + (body || 'z4 |\n');
+    'X:1\nM:'+startMeter+'\nL:1/4\nK:'+(s.key||'C')+'\n' + (body || 'z4 |\n');
   abcPreview();
 }
 function abcSave(){
@@ -1047,12 +1093,15 @@ function renderEditor(){
     'separali con uno spazio (es. <code>Dm/C Bbmaj7 C7</code>). Lascia una riga vuota per una misura vuota.<br>'+
     '<b>Durata</b>: aggiungi <code>*N</code> a un accordo per dargli un peso (default 1). '+
     'Es. <code>C*3 G7</code> = C per 3/4 e G7 per 1/4; <code>Am D7</code> = metà e metà.<br>'+
+    '<b>Metrica</b>: imposta quella del brano qui sopra; per <b>cambiarla a metà brano</b> inizia una '+
+    'misura con <code>N/D</code> (es. <code>6/8 Dbmaj7</code>, poi <code>5/8 Cmaj7</code>) — resta in vigore fino al cambio successivo.<br>'+
     'Formato simboli accettati da ChordLab: <code>C&nbsp; Em7&nbsp; A7&nbsp; Dm/C&nbsp; Bbmaj7&nbsp; A7sus4</code>.</div>'+
     '<div class="ed-meta">'+
       '<label>Titolo<input id="ed-title" value="'+edAttr(m.title)+'"></label>'+
       '<label>Artista<input id="ed-artist" value="'+edAttr(m.artist)+'"></label>'+
       '<label>Anno<input id="ed-year" value="'+edAttr(m.year)+'"></label>'+
       '<label>Tonalità<input id="ed-key" value="'+edAttr(m.key)+'"></label>'+
+      '<label>Metrica<input id="ed-meter" value="'+edAttr(m.meter||'4/4')+'" placeholder="4/4"></label>'+
       '<label>Capo<input id="ed-capo" type="number" min="0" max="12" value="'+(parseInt(m.capo,10)||0)+'"></label>'+
       '<label>Tag (virgola)<input id="ed-tags" value="'+edAttr((m.tags||[]).join(', '))+'"></label>'+
     '</div>'+
@@ -1090,6 +1139,7 @@ function edSyncFromDOM(){
   function val(id){ var el=document.getElementById(id); return el?el.value:''; }
   m.title = val('ed-title'); m.artist = val('ed-artist'); m.year = val('ed-year');
   m.key = val('ed-key') || 'C'; m.capo = parseInt(val('ed-capo'),10) || 0;
+  var mt = (val('ed-meter')||'').trim(); m.meter = /^\d+\/\d+$/.test(mt) ? mt : '4/4';
   m.tags = val('ed-tags').split(',').map(function(t){ return t.trim(); }).filter(Boolean);
   var secs = [];
   document.querySelectorAll('#ed-sections .ed-section').forEach(function(el){

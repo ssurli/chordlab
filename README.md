@@ -144,6 +144,25 @@ tornano affiancati nella battuta. La durata `*N` è riconosciuta anche dall'**ed
 (trasposizione, diagrammi e popover restano corretti). La modalità è rispettata anche in **Live**
 e in **stampa**.
 
+## Metriche / time signatures (stile iReal Pro)
+Ogni brano ha una **metrica** (campo `meter`, default `4/4`) che ne fissa la **durata della
+battuta**: la metrica viene mostrata come **frazione impilata** all'inizio (e solo quando cambia,
+come in iReal Pro). La metrica determina i movimenti totali della misura (`4/4`→4, `6/8`→3,
+`5/8`→2,5…) e quindi sia la riproduzione audio sia le durate del pentagramma generato.
+
+Per **cambiare metrica a metà brano** basta iniziare una misura con `N/D` (in `bars` o nell'editor):
+
+```js
+{ id:'odd', title:'Odd Meters', key:'C', meter:'4/4', sections:[
+  { name:'A', bars:['Emaj7', 'G#m7', '6/8 Dbmaj7', 'F#m7', '5/8 Cmaj7 F7'] }
+]}
+//  parte in 4/4; "6/8 Dbmaj7" passa a 6/8; "5/8 ..." passa a 5/8 (resta in vigore fino al cambio)
+```
+
+Il token `N/D` non è confondibile con uno slash-chord (es. `G/B`), che inizia sempre con una nota.
+La metrica si conserva nell'**editor**, nell'**export ChordPro** (`{meter: N/D}`) e nell'import
+`.crd` (riga `Time:`/`Metrica:`).
+
 ## Player audio (ascolto accordi)
 Il pannello **🎧 Ascolta** sotto i controlli riproduce la progressione del brano con un piccolo
 sintetizzatore **Web Audio** (nessuna dipendenza, nessun file audio): **▶ Play / ⏸ Ferma**,

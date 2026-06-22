@@ -712,6 +712,16 @@ window.SONGS = [
       { name: 'Verse', bars: ['D', 'C', 'G', 'D'] },
       { name: 'Chorus', bars: ['A', 'C', 'G', 'D', 'A', 'C', 'G', 'D'] }
     ]
+  },
+  {
+    // Demo delle funzioni iReal: metriche per battuta (N/D) + durate per accordo (*N).
+    id: 'time-signatures-demo', title: 'Time Signatures (Demo)', artist: 'ChordLab', year: '', key: 'Emaj7', meter: '4/4',
+    capo: 0, tags: ['demo', 'metriche', 'time signatures', 'ireal'],
+    sections: [
+      { name: 'A', bars: ['Emaj7 G#m7', '6/8 C#m7', 'B7', '3/8 Bb7', '7/8 Ebmaj7 Ebm7 Ab7'] },
+      { name: 'B', bars: ['6/8 Dbmaj7', 'Fm7', '12/8 Bbm7', '9/8 Ab7 G7 Ab7 G7', '3/8 Cmaj7'] },
+      { name: 'Durate', bars: ['4/4 C*3 G7', 'Am D7', 'F G7 C7 A7', 'Dm7*2 G7'] }
+    ]
   }
 ];
 

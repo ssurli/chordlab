@@ -66,10 +66,11 @@
       if (raw === '') continue;
       if (headerName(raw) || isChordLine(raw)) break;
       // Direttive in stile metadato: "Key: G", "Capo: 2"
-      var md = /^(key|tonalit[aà]|capo|artist|artista|year|anno|title|titolo)\s*[:=]\s*(.+)$/i.exec(raw);
+      var md = /^(key|tonalit[aà]|capo|artist|artista|year|anno|title|titolo|meter|metre|metrica|time)\s*[:=]\s*(.+)$/i.exec(raw);
       if (md) {
         var k = md[1].toLowerCase(), v = md[2].trim();
         if (/key|tonal/.test(k)) song.key = v;
+        else if (/met|time/.test(k)) { if (/^\d+\/\d+$/.test(v)) song.meter = v; }
         else if (k === 'capo') song.capo = parseInt(v, 10) || 0;
         else if (/artist/.test(k)) song.artist = v;
         else if (/year|anno/.test(k)) song.year = v;

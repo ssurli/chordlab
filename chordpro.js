@@ -10,6 +10,7 @@
     if (song.title)  L.push('{title: ' + song.title + '}');
     if (song.artist) L.push('{artist: ' + song.artist + '}');
     if (song.key)    L.push('{key: ' + song.key + '}');
+    if (song.meter)  L.push('{meter: ' + song.meter + '}');
     if (song.year)   L.push('{year: ' + song.year + '}');
     if (song.capo)   L.push('{capo: ' + song.capo + '}');
     if (song.tags && song.tags.length) L.push('{tags: ' + song.tags.join(', ') + '}');
@@ -65,6 +66,7 @@
         if (key === 'title' || key === 't') song.title = val;
         else if (key === 'artist' || key === 'subtitle' || key === 'st') song.artist = song.artist || val;
         else if (key === 'key') song.key = val;
+        else if (key === 'meter' || key === 'time' || key === 'metre') { if (/^\d+\/\d+$/.test(val)) song.meter = val; }
         else if (key === 'year') song.year = val;
         else if (key === 'capo') song.capo = parseInt(val, 10) || 0;
         else if (key === 'tags') song.tags = val.split(',').map(function (t){return t.trim();}).filter(Boolean);
