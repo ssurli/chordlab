@@ -1,10 +1,33 @@
 # ChordLab — Contratto condiviso tra moduli
 
-App single-page, **vanilla JS**, nessun build step. Tre file JS espongono oggetti
+App single-page, **vanilla JS**, nessun build step. Più file JS espongono oggetti
 globali su `window`. Il file `index.html` li carica in quest'ordine:
-`engine.js` → `instruments.js` → `songs.js` → script UI inline.
+`engine.js` → `instruments.js` → `chordpro.js` → `crd.js` → `songs.js` →
+`player.js` → script UI inline.
 
 Tutto deve funzionare aprendo il file direttamente (`file://`), senza server.
+
+## crd.js → `window.CrdImport`
+
+Import di fogli accordi in testo semplice (`.crd` o "accordi sopra liriche").
+Nessuna dipendenza (validazione accordi con regex propria, non `ChordEngine`).
+
+```js
+CrdImport.parse(text)        // -> song nel modello SONGS (sezioni di misure; liriche ignorate)
+CrdImport.looksLikeCrd(text) // -> bool: c'è almeno una riga di soli accordi?
+CrdImport.isChordLine(line)  // -> bool
+```
+
+## player.js → `window.ChordPlayer`
+
+Player audio con la Web Audio API (sintesi a oscillatori; nessun file audio).
+
+```js
+// events: [{ pcs:[int...], bass:int|null, beats:number }]  (pcs = pitch-class assolute)
+ChordPlayer.play(events, { bpm, metronome, onStep(i), onEnd(), onUnsupported() })
+ChordPlayer.stop()
+ChordPlayer.isPlaying() // -> bool
+```
 
 ---
 
@@ -80,6 +103,7 @@ window.SONGS = [
     artist: 'The Beatles',
     year: '1965',
     key: 'F',                 // tonalità originale (root maggiore o 'Am' per minore)
+    meter: '4/4',             // opzionale: metrica/time signature del brano (default '4/4')
     capo: 0,                  // opzionale
     tags: ['ballad','60s'],   // per ricerca
     sections: [
@@ -97,6 +121,13 @@ Regole `bars`: ogni elemento dell'array è **una misura**; può contenere 1+ acc
 separati da spazio. Usare i simboli accordo nel formato accettato da `ChordEngine.parse`.
 `name` delle sezioni preferibilmente tra: Intro, Verse, Pre-Chorus, Chorus, Bridge,
 Solo, Outro, Instrumental (la UI colora per tipo).
+
+**Durata e metrica dentro `bars`** (stile iReal Pro):
+- un accordo può avere un **peso** `*N` (intero, default 1) per la durata relativa nella
+  misura: `'C*3 G7'` → C per 3/4, G7 per 1/4; `'Am D7'` → metà/metà;
+- una misura può iniziare con una **metrica** `N/D` (es. `'6/8 Dbmaj7'`) che cambia la
+  time signature da lì in poi. `N/D` non collide con gli slash-chord (che iniziano con
+  una nota). La durata totale della misura in movimenti da 1/4 è `N*4/D`.
 
 Inserire **Yesterday** completo e fedele + almeno 5 altri brani noti e semplici
 (es. Knockin' on Heaven's Door, Let It Be, Wonderwall, Stand By Me, Hey Jude...),

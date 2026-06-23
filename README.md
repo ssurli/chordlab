@@ -23,6 +23,9 @@ schede accordi in stile *iReal Pro*: elenco accordi a misure, suddiviso per
 |---|---|---|
 | `engine.js` | `window.ChordEngine` | parsing accordi, scale, **trasposizione** |
 | `instruments.js` | `window.Instruments` | diagrammi SVG chitarra/ukulele/piano |
+| `chordpro.js` | `window.ChordPro` | import/export formato ChordPro |
+| `crd.js` | `window.CrdImport` | import fogli accordi `.crd` / testo "accordi sopra liriche" |
+| `player.js` | `window.ChordPlayer` | player audio Web Audio (riproduzione accordi) |
 | `songs.js` | `window.SONGS` + `window.SETLISTS` | libreria brani a sezioni + scalette (dati aperti) |
 | `index.html` | UI | ricerca, scalette, griglia misure, controlli, integrazione |
 
@@ -122,15 +125,69 @@ Lo script inlinea `engine.js`, `instruments.js` e `songs.js` dentro `index.html`
 sorgente di verità resta `index.html` + i tre `.js`: dopo ogni modifica, rilancia il
 build per aggiornare lo standalone.
 
+## Suddivisione delle battute (lead-sheet)
+Quando una misura contiene **più accordi** (separati da spazio in `bars`), la griglia li
+mostra in **celle** all'interno della stessa stanghetta, in stile *iReal Pro*. Per default le
+celle hanno **uguale durata** (2 accordi = metà/metà, 4 = quarti), ma ogni accordo può avere una
+**durata personalizzata** con il suffisso `*N` (peso intero, default 1):
+
+```js
+{ name: 'Verse', bars: ['C*3 G7', 'Am D7', 'F'] }
+//  C dura 3/4 e G7 1/4 · Am e D7 metà ciascuno · F intera misura
+```
+
+Le celle vengono disegnate **proporzionali al peso** e il bordo esterno è la **stanghetta di
+battuta**; i separatori interni (tratteggiati) marcano la suddivisione. Il pulsante **📐 Suddividi**
+nei controlli attiva/disattiva questa visualizzazione (di default attiva); spento, gli accordi
+tornano affiancati nella battuta. La durata `*N` è riconosciuta anche dall'**editor in-app**, dal
+**player audio** e dal generatore di pentagramma; il peso non altera il simbolo dell'accordo
+(trasposizione, diagrammi e popover restano corretti). La modalità è rispettata anche in **Live**
+e in **stampa**.
+
+## Metriche / time signatures (stile iReal Pro)
+Ogni brano ha una **metrica** (campo `meter`, default `4/4`) che ne fissa la **durata della
+battuta**: la metrica viene mostrata come **frazione impilata** all'inizio (e solo quando cambia,
+come in iReal Pro). La metrica determina i movimenti totali della misura (`4/4`→4, `6/8`→3,
+`5/8`→2,5…) e quindi sia la riproduzione audio sia le durate del pentagramma generato.
+
+Per **cambiare metrica a metà brano** basta iniziare una misura con `N/D` (in `bars` o nell'editor):
+
+```js
+{ id:'odd', title:'Odd Meters', key:'C', meter:'4/4', sections:[
+  { name:'A', bars:['Emaj7', 'G#m7', '6/8 Dbmaj7', 'F#m7', '5/8 Cmaj7 F7'] }
+]}
+//  parte in 4/4; "6/8 Dbmaj7" passa a 6/8; "5/8 ..." passa a 5/8 (resta in vigore fino al cambio)
+```
+
+Il token `N/D` non è confondibile con uno slash-chord (es. `G/B`), che inizia sempre con una nota.
+La metrica si conserva nell'**editor**, nell'**export ChordPro** (`{meter: N/D}`) e nell'import
+`.crd` (riga `Time:`/`Metrica:`).
+
+## Player audio (ascolto accordi)
+Il pannello **🎧 Ascolta** sotto i controlli riproduce la progressione del brano con un piccolo
+sintetizzatore **Web Audio** (nessuna dipendenza, nessun file audio): **▶ Play / ⏸ Ferma**,
+cursore **Tempo (BPM)** e **🥁 Metro** (click metronomo). Ogni misura dura 4 movimenti suddivisi
+tra i suoi accordi (coerente con la suddivisione grafica), gli accordi suonano **trasposti** come
+a schermo, e la **battuta in esecuzione viene evidenziata** e portata in vista. Cambiando brano la
+riproduzione si ferma.
+
 ## Interoperabilità e librerie integrate
 - **ChordPro** (`chordpro.js`, nativo): importa/esporta brani nel formato standard ChordPro
-  (pulsanti *📄 ChordPro* nella sidebar e *⤓ ChordPro* nella scheda brano). Supporta sia il
+  (pulsanti *📄 Importa accordi* nella sidebar e *⤓ ChordPro* nella scheda brano). Supporta sia il
   nostro stile a battute (`| C | G |`) sia il classico `[C]testo`.
+- **Fogli accordi `.crd` / testo** (`crd.js`, nativo): lo stesso pulsante *📄 Importa accordi*
+  riconosce i file **`.crd`** e i fogli "accordi sopra le liriche" (righe di soli accordi alternate
+  a righe di testo). Le righe-accordo diventano misure (le liriche sono ignorate, ChordLab è a sole
+  battute); intestazioni `[Verse]`, `Chorus:`, ecc. diventano sezioni, e `Key:`/`Capo:` sono lette
+  come metadati. Il formato giusto è scelto **automaticamente** in base al contenuto/estensione.
 - **Diagrammi accurati**: i diagrammi di chitarra/ukulele usano le diteggiature reali del
   database aperto [`chords-db`](https://github.com/tombatossals/chords-db) (vendorizzato in
   `vendor/chords-db.js`), con fallback all'euristica interna per accordi non presenti.
 - **Pentagramma**: gli estratti in notazione ABC sono renderizzati con
-  [`abcjs`](https://github.com/paulrosen/abcjs) (`vendor/abcjs-basic-min.js`).
+  [`abcjs`](https://github.com/paulrosen/abcjs) (`vendor/abcjs-basic-min.js`). L'editor (in modalità
+  **🖍 Annota → 🎼 Spartito → Scrivi**) ha una **barra di inserimento rapido** (note, pause, durate,
+  alterazioni, stanghette) e un pulsante **🎼 Genera dagli accordi** che crea uno scheletro di
+  pentagramma dalle fondamentali della sezione, con durate proporzionali alla suddivisione.
 
 I file in `vendor/` sono librerie di terze parti (licenza **MIT**) incluse per funzionare
 offline; `build.js` le inlinea nello standalone. Per questo `chordlab-standalone.html` pesa
