@@ -65,6 +65,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,-ap
 /* SECTIONS / MEASURES */
 .section{margin-bottom:22px}
 .section-label{display:inline-block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.13em;color:var(--text);padding:3px 11px;border-radius:5px;margin-bottom:9px}
+.sec-count{display:inline-block;font-size:10px;font-weight:600;color:var(--text2);margin-left:8px;vertical-align:middle;letter-spacing:.04em}
 .bars{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
 .bar{background:var(--bg2);border:1px solid var(--border2);border-radius:5px;min-height:46px;display:flex;align-items:center;justify-content:center;gap:9px;padding:6px 4px;flex-wrap:wrap}
 .bar.empty{background:repeating-linear-gradient(45deg,var(--bg),var(--bg) 6px,var(--bg2) 6px,var(--bg2) 12px);opacity:.5}
@@ -210,8 +211,17 @@ body.annotate .bar:hover{outline:2px dashed var(--accent);outline-offset:-2px}
 .score-dsc{font-size:11px;color:var(--text3);line-height:1.45}
 
 /* ===== EXPORT CHORDPRO (copia / scarica) ===== */
-#cpmodal{display:none;position:fixed;inset:0;z-index:700;background:rgba(0,0,0,.6);align-items:center;justify-content:center}
-#cpmodal.show{display:flex}
+#cpmodal,#bkmodal{display:none;position:fixed;inset:0;z-index:700;background:rgba(0,0,0,.6);align-items:center;justify-content:center}
+#cpmodal.show,#bkmodal.show{display:flex}
+.save-status{font-size:11px;margin-top:7px;min-height:14px;line-height:1.4}
+.save-status.safe{color:#5a9a6a}
+.save-status.dirty{color:var(--accent2)}
+.bk-list{display:flex;flex-direction:column;gap:7px;max-height:50vh;overflow:auto}
+.bk-empty{font-size:12px;color:var(--text3);padding:10px 2px}
+.bk-item{display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--bg);border:1px solid var(--border2);border-radius:7px;padding:8px 11px}
+.bk-meta{display:flex;flex-direction:column;gap:2px;font-size:13px}
+.bk-meta span{font-size:11px;color:var(--text3)}
+.bk-act{display:flex;gap:6px;flex-shrink:0}
 #cp-out{width:100%;height:260px;background:var(--bg);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:monospace;font-size:13px;padding:8px;outline:none;resize:vertical;white-space:pre}
 #cp-out:focus{border-color:var(--accent)}
 #cp-msg{color:var(--accent2);min-height:16px}
@@ -277,7 +287,9 @@ body.annotate .bar:hover{outline:2px dashed var(--accent);outline-offset:-2px}
       <span class="btn" onclick="cpExportSetlist()" title="Esporta la vista corrente (scaletta o libreria) in un unico file ChordPro">⤓ Scaletta</span>
       <span class="btn" onclick="edExport()" title="Esporta le tue modifiche (JSON)">⬇︎ Esporta</span>
       <span class="btn" onclick="document.getElementById('imp-file').click()" title="Importa modifiche (JSON)">⬆︎ Importa</span>
+      <span class="btn" onclick="openRestore()" title="Backup automatici locali: ripristina uno stato precedente">↺ Ripristina</span>
     </div>
+    <div id="save-status" class="save-status" title="Le modifiche sono salvate automaticamente nel browser. Usa Esporta per un backup su file."></div>
     <input id="imp-file" type="file" accept="application/json,.json" style="display:none">
     <input id="cp-file" type="file" accept=".cho,.chordpro,.crd,.pro,.txt,text/plain" style="display:none">
   </div>
@@ -367,6 +379,19 @@ body.annotate .bar:hover{outline:2px dashed var(--accent);outline-offset:-2px}
   </div>
 </div>
 
+<div id="bkmodal" onclick="if(event.target===this)closeRestore()">
+  <div class="abc-box">
+    <div class="abc-head"><b>↺ Ripristina da backup</b><span class="abc-x" onclick="closeRestore()">×</span></div>
+    <p class="score-sub">Le tue modifiche vengono salvate automaticamente nel browser dopo ogni cambiamento. Qui trovi gli ultimi backup automatici: puoi ripristinarne uno o scaricarlo come file.</p>
+    <div id="bk-list" class="bk-list"></div>
+    <div class="abc-actions" style="margin-top:10px">
+      <span class="btn primary" onclick="edExport()">⬇︎ Esporta backup su file</span>
+      <span class="btn" onclick="closeRestore()">Chiudi</span>
+    </div>
+    <div class="abc-hint">Ripristinando uno stato precedente, quello attuale viene comunque salvato come nuovo backup: l'operazione è reversibile.</div>
+  </div>
+</div>
+
 <script src="vendor/abcjs-basic-min.js"></script>
 <script src="vendor/chords-db.js"></script>
 <script src="engine.js"></script>
@@ -382,6 +407,9 @@ var SETLISTS = window.SETLISTS || [];
 var E = window.ChordEngine;
 var INST = window.Instruments;
 var STORE_KEY = 'chordlab.userSongs.v1';
+var BACKUP_KEY = 'chordlab.backups.v1';      // ring-buffer di snapshot automatici
+var EXPORT_KEY = 'chordlab.lastExport.v1';   // firma dell'ultimo backup su file
+var MAX_BACKUPS = 8;
 var userStore = loadStore();   // { id: songObject } — override + brani nuovi dell'utente
 var SONGS = [];
 rebuildSongs();
@@ -394,8 +422,88 @@ function escHtml(v){ return String(v==null?'':v).replace(/&/g,'&amp;').replace(/
 function cloneSong(s){ return JSON.parse(JSON.stringify(s)); }
 function loadStore(){ try { return JSON.parse(localStorage.getItem(STORE_KEY)) || {}; } catch(e){ return {}; } }
 function saveStore(){
-  try { localStorage.setItem(STORE_KEY, JSON.stringify(userStore)); return true; }
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(userStore)); scheduleBackup(); refreshSaveStatus(); return true; }
   catch(e){ alert('Impossibile salvare nel browser (storage non disponibile).\nUsa “Esporta” per non perdere le modifiche.'); return false; }
+}
+
+/* ---- backup automatico locale (ring-buffer di snapshot) + ripristino ---- */
+function loadBackups(){ try { return JSON.parse(localStorage.getItem(BACKUP_KEY)) || []; } catch(e){ return []; } }
+var _bkTimer = null;
+function scheduleBackup(){ clearTimeout(_bkTimer); _bkTimer = setTimeout(snapshotBackup, 5000); }
+// Salva uno snapshot timestampato di userStore. Deduplica vs l'ultimo e, se lo
+// storage è pieno, scarta gli snapshot più vecchi finché ci sta.
+function snapshotBackup(){
+  try {
+    var data = JSON.stringify(userStore);
+    if(data === '{}') return;                       // niente da salvare
+    var list = loadBackups();
+    if(list.length && list[0].data === data) return; // invariato dall'ultimo snapshot
+    list.unshift({ t: Date.now(), n: Object.keys(userStore).length, data: data });
+    list = list.slice(0, MAX_BACKUPS);
+    while(list.length){
+      try { localStorage.setItem(BACKUP_KEY, JSON.stringify(list)); break; }
+      catch(e){ list.pop(); }                        // quota piena: butta il più vecchio
+    }
+  } catch(e){}
+}
+function fmtBackupTime(t){
+  var d = new Date(t), now = new Date();
+  var hhmm = ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);
+  var sameDay = d.toDateString()===now.toDateString();
+  if(sameDay) return 'Oggi '+hhmm;
+  var y = new Date(now); y.setDate(now.getDate()-1);
+  if(d.toDateString()===y.toDateString()) return 'Ieri '+hhmm;
+  return ('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2)+' '+hhmm;
+}
+function openRestore(){
+  renderBackupList();
+  document.getElementById('bkmodal').classList.add('show');
+}
+function closeRestore(){ document.getElementById('bkmodal').classList.remove('show'); }
+function renderBackupList(){
+  var list = loadBackups(), el = document.getElementById('bk-list');
+  if(!list.length){ el.innerHTML = '<div class="bk-empty">Nessun backup automatico ancora. Verrà creato dopo la prima modifica.</div>'; return; }
+  el.innerHTML = list.map(function(b, i){
+    return '<div class="bk-item">'+
+      '<div class="bk-meta"><b>'+fmtBackupTime(b.t)+'</b><span>'+b.n+(b.n===1?' brano':' brani')+'</span></div>'+
+      '<div class="bk-act">'+
+        '<span class="btn sm primary" onclick="restoreBackup('+i+')">↺ Ripristina</span>'+
+        '<span class="btn sm" onclick="downloadBackup('+i+')" title="Scarica questo backup come file JSON">⬇︎</span>'+
+      '</div></div>';
+  }).join('');
+}
+function restoreBackup(i){
+  var list = loadBackups(), b = list[i]; if(!b) return;
+  if(!confirm('Ripristinare il backup del '+fmtBackupTime(b.t)+' ('+b.n+' brani)?\nLo stato attuale viene salvato come nuovo backup, quindi è reversibile.')) return;
+  snapshotBackup();                                  // salva lo stato attuale prima di sovrascrivere
+  try { userStore = JSON.parse(b.data) || {}; } catch(e){ alert('Backup non valido.'); return; }
+  saveStore(); rebuildSongs(); buildSidebar();
+  if(state.sel && !songById(state.sel)) state.sel = SONGS.length?SONGS[0].id:null;
+  if(state.sel) render();
+  closeRestore();
+}
+function downloadBackup(i){
+  var list = loadBackups(), b = list[i]; if(!b) return;
+  var blob = new Blob([b.data], {type:'application/json'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'chordlab-backup-'+new Date(b.t).toISOString().slice(0,16).replace(/[:T]/g,'-')+'.json';
+  document.body.appendChild(a); a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 100);
+}
+// Indicatore: quante modifiche e se sono già state esportate su file.
+function refreshSaveStatus(){
+  var el = document.getElementById('save-status'); if(!el) return;
+  var n = Object.keys(userStore).length;
+  if(!n){ el.className='save-status'; el.textContent=''; return; }
+  var sig = '';
+  try { sig = localStorage.getItem(EXPORT_KEY) || ''; } catch(e){}
+  var cur = ''+n+'|'+JSON.stringify(userStore).length;
+  var safe = (sig === cur);
+  el.className = 'save-status'+(safe?' safe':' dirty');
+  el.textContent = safe
+    ? '✓ '+n+(n===1?' modifica salvata su file':' modifiche salvate su file')
+    : '● '+n+(n===1?' modifica':' modifiche')+' (non ancora esportate)';
 }
 // SONGS = base + override utente (per id) + brani nuovi, preservando l'ordine.
 function rebuildSongs(){
@@ -677,7 +785,9 @@ function render(){
   var shownMeter = null;
   s.sections.forEach(function(sec, si){
     var col = sectionColor(sec.name);
-    html += '<div class="section"><span class="section-label" style="background:'+col+'">'+sec.name+'</span>';
+    var nBars = (sec.bars||[]).length;
+    html += '<div class="section"><span class="section-label" style="background:'+col+'">'+sec.name+'</span>'+
+      '<span class="sec-count" title="Battute in questa sezione">'+nBars+(nBars===1?' battuta':' battute')+'</span>';
     if(state.annot){
       html += '<span class="sec-tools">'+
         '<span class="btn sm" onclick="scoreChoose('+si+')" title="Aggiungi spartito: scrivi o importa immagine">🎼 Spartito</span>'+
@@ -1215,6 +1325,9 @@ function edExport(){
   a.download = 'chordlab-modifiche.json';
   document.body.appendChild(a); a.click();
   setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 100);
+  // registra la firma dell'export così l'indicatore mostra "salvato su file"
+  try { localStorage.setItem(EXPORT_KEY, ''+Object.keys(userStore).length+'|'+JSON.stringify(userStore).length); } catch(e){}
+  refreshSaveStatus();
 }
 function edImportFile(file){
   var r = new FileReader();
@@ -1227,7 +1340,7 @@ function edImportFile(file){
         var s = obj[id];
         if(s && s.title && s.sections){ userStore[s.id||id] = s; n++; }
       });
-      saveStore(); rebuildSongs(); buildSidebar();
+      saveStore(); rebuildSongs(); buildSidebar(); refreshSaveStatus();
       alert('Importate '+n+' modifiche/brani.');
     } catch(e){ alert('File non valido.'); }
   };
@@ -1370,6 +1483,7 @@ function closeMenu(){ document.getElementById('sidebar').classList.remove('open'
 /* ================= INIT ================= */
 buildSetlistSelect();
 buildSidebar();
+refreshSaveStatus();
 if(SONGS.length){ pick(SONGS[0].id); }
 </script>
 </body>
