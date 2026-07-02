@@ -115,7 +115,7 @@ body.live .timesig{font-size:18px}
 #pop-close{position:absolute;top:4px;right:8px;color:var(--text3);cursor:pointer;font-size:16px;line-height:1}
 
 /* EDITOR */
-#lib-tools{display:flex;gap:6px;margin-top:10px}
+#lib-tools{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
 #lib-tools .btn{flex:1;text-align:center;font-size:11px;padding:6px 4px}
 .editor .ed-hint{font-size:11px;color:var(--text3);margin:4px 0 16px;line-height:1.5}
 .ed-meta{display:flex;flex-wrap:wrap;margin-bottom:8px}
@@ -236,6 +236,29 @@ body.annotate .bar:hover{outline:2px dashed var(--accent);outline-offset:-2px}
 #cp-out:focus{border-color:var(--accent)}
 #cp-msg{color:var(--accent2);min-height:16px}
 
+/* ===== IREAL VIEW (lead-sheet) ===== */
+body.ireal{--barline:#8a8a8a}
+body.ireal.live{--barline:#d8d8d8}
+body.ireal .bars{column-gap:0;row-gap:14px}
+body.ireal .bar{background:transparent;border:none;border-left:2px solid var(--barline);border-radius:0;justify-content:flex-start;padding-left:8px;position:relative}
+body.ireal .bar:nth-child(4n),body.ireal .bar:last-child{border-right:2px solid var(--barline)}
+body.ireal .bar.sec-end{border-right:6px double var(--barline)}
+body.ireal .bar.song-end{border-right:5px solid var(--barline)}
+body.ireal .bar.song-end::after{content:'';position:absolute;top:0;bottom:0;right:7px;width:1px;background:var(--barline)}
+body.ireal .bar.markerbar{border-style:solid}
+body.ireal .bar.empty{opacity:.35}
+body.ireal .bar.subdiv{padding-left:0}
+body.ireal .bar.subdiv .cell{justify-content:flex-start;padding-left:8px}
+body.ireal .section-label{border:2px solid var(--barline);border-radius:0;font-family:Georgia,'Palatino Linotype',serif;font-size:13px;font-weight:800;letter-spacing:.06em;padding:2px 9px;margin-bottom:6px}
+body.ireal .section{margin-bottom:28px}
+body.ireal .chord{font-family:Georgia,'Palatino Linotype','Times New Roman',serif;font-weight:700}
+body.ireal .chord sup{font-size:.58em;vertical-align:.45em}
+body.ireal .chord .bass{font-size:.62em;vertical-align:-.12em}
+body.ireal .timesig{padding-left:6px}
+body.ireal.live .bar{background:transparent}
+body.ireal.live .bar.subdiv .cell{border-left-color:#555}
+body.ireal.live .bars{row-gap:20px}
+
 /* ===== TOUCH / TABLET (iPad, Android): target più grandi, niente zoom su focus ===== */
 @media (pointer:coarse){
   .btn{padding:9px 14px;font-size:14px}
@@ -265,6 +288,9 @@ body.annotate .bar:hover{outline:2px dashed var(--accent);outline-offset:-2px}
   /* evita che una sezione si spezzi a metà tra due pagine */
   .section{break-inside:avoid;page-break-inside:avoid}
   .bar{break-inside:avoid;page-break-inside:avoid}
+  body.ireal{--barline:#000}
+  body.ireal .bar{background:#fff}
+  body.ireal .section-label{background:#fff!important;border-color:#000}
 }
 
 /* tablet + mobile: menu a scomparsa con topbar */
@@ -277,6 +303,10 @@ body.annotate .bar:hover{outline:2px dashed var(--accent);outline-offset:-2px}
   #main{flex:1;overflow-y:auto;padding:14px 14px 50px;width:100%}
   .bars{grid-template-columns:repeat(2,1fr)}
   .song-header h2{font-size:21px}
+  body.ireal .bar:nth-child(4n){border-right:none}
+  body.ireal .bar:nth-child(2n),body.ireal .bar:last-child{border-right:2px solid var(--barline)}
+  body.ireal .bar.sec-end{border-right:6px double var(--barline)}
+  body.ireal .bar.song-end{border-right:5px solid var(--barline)}
 }
 </style>
 </head>
@@ -425,12 +455,14 @@ var INST = window.Instruments;
 var STORE_KEY = 'chordlab.userSongs.v1';
 var BACKUP_KEY = 'chordlab.backups.v1';      // ring-buffer di snapshot automatici
 var EXPORT_KEY = 'chordlab.lastExport.v1';   // firma dell'ultimo backup su file
+var VIEW_KEY = 'chordlab.viewPrefs.v1';      // preferenze di vista (es. lead-sheet iReal)
 var MAX_BACKUPS = 8;
 var userStore = loadStore();   // { id: songObject } — override + brani nuovi dell'utente
 var SONGS = [];
 rebuildSongs();
 
-var state = { sel: null, transpose: 0, instrument: 'guitar', showAll: true, filter: '', setlist: '', italian: false, editing: false, live: false, annot: false, chordFs: 0, scrollOn: false, scrollSpeed: 1, subdiv: true, bpm: 90, metronome: false };
+var state = { sel: null, transpose: 0, instrument: 'guitar', showAll: true, filter: '', setlist: '', italian: false, editing: false, live: false, annot: false, chordFs: 0, scrollOn: false, scrollSpeed: 1, subdiv: true, bpm: 90, metronome: false, ireal: true };
+var _vp = loadViewPrefs(); if(typeof _vp.ireal==='boolean') state.ireal=_vp.ireal;
 
 function escHtml(v){ return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
@@ -675,7 +707,7 @@ function chordHTML(sym){
   if(!p) return '<span class="chord" data-sym="'+sym+'">'+locChord(sym)+'</span>';
   var root = locNote(p.root);
   var suf = p.suffix || '';
-  var bass = p.bass ? '/'+locNote(p.bass) : '';
+  var bass = p.bass ? '<span class="bass">/'+locNote(p.bass)+'</span>' : '';
   var inner = root + (suf ? '<sup>'+suf+'</sup>' : '') + bass;
   // data-sym keeps the English symbol so the engine/diagrams keep working.
   return '<span class="chord" data-sym="'+sym.replace(/"/g,'')+'">'+inner+'</span>';
@@ -741,6 +773,11 @@ function resetKey(){ state.transpose = 0; render(); }
 function setInstrument(id){ state.instrument = id; render(); }
 function toggleAll(){ state.showAll = !state.showAll; render(); }
 function toggleSubdiv(){ state.subdiv = !state.subdiv; render(); }
+
+/* ---- preferenze di vista (persistite nel browser) ---- */
+function loadViewPrefs(){ try{ return JSON.parse(localStorage.getItem(VIEW_KEY))||{}; }catch(e){ return {}; } }
+function saveViewPrefs(){ try{ localStorage.setItem(VIEW_KEY, JSON.stringify({ireal:state.ireal})); }catch(e){} }
+function toggleIreal(){ state.ireal=!state.ireal; document.body.classList.toggle('ireal',state.ireal); saveViewPrefs(); render(); }
 
 /* ================= PLAYER AUDIO (Web Audio) ================= */
 // Costruisce la sequenza da suonare: ogni misura dura 4 beat, ripartiti tra gli
@@ -837,6 +874,7 @@ function render(){
     '<div class="ctl-group" style="margin-left:auto"><span class="ctl-label">Strumento</span>'+instBtns+'</div>'+
     '<span class="btn" onclick="toggleAll()">'+(state.showAll?'Nascondi':'Mostra')+' diagrammi</span>'+
     '<span class="btn'+(state.subdiv?' inst-btn active':'')+'" onclick="toggleSubdiv()" title="Suddividi graficamente le battute in base al numero di accordi">📐 Suddividi</span>'+
+    '<span class="btn'+(state.ireal?' inst-btn active':'')+'" onclick="toggleIreal()" title="Vista lead-sheet stile iReal Pro">🎼 iReal</span>'+
     '<span class="btn" onclick="edEdit()">✏️ Modifica</span>'+
     '<span class="btn'+(state.annot?' inst-btn active':'')+'" onclick="toggleAnnotate()">🖍 Annota</span>'+
     '<span class="btn" onclick="toggleLive()">🎤 Live</span>'+
@@ -882,9 +920,15 @@ function render(){
       var sub = state.subdiv && toks.length>1;
       var cls = 'bar' + (toks.length ? '' : ' empty') + (sub ? ' subdiv' : '') + (sig ? ' has-sig' : '')
         + (re.isRepeat ? ' repeatbar' : '') + (re.marker ? ' markerbar' : '');
+      // Classi di fine sezione / fine brano (inerti fuori dalla vista iReal).
+      if(bi === (sec.bars||[]).length-1){
+        cls += ' sec-end';
+        if(si === s.sections.length-1) cls += ' song-end';
+      }
       // Suddivisione: più accordi nella stessa misura -> celle separate da una
       // stanghetta interna, larghe in proporzione alla durata (peso "*N").
-      var style = (a && a.c) ? ' style="background:'+a.c+';border-color:'+a.c+'"' : '';
+      // In vista iReal il colore annotazione non tocca border-color (ricolorerebbe le stanghette).
+      var style = (a && a.c) ? ' style="background:'+a.c+(state.ireal?'':';border-color:'+a.c)+'"' : '';
       var inner;
       if(re.marker){ inner = '<span class="struct-marker">'+escHtml(re.marker)+'</span>'; }
       else if(re.isRepeat){ inner = '<span class="repeat-sign" title="Ripete la battuta precedente">%</span>'; }
@@ -996,7 +1040,7 @@ function annoSetColor(c){
   var idx = ANNO_COLORS.map(function(x){return x.id;}).indexOf(c);
   if(idx>=0 && sw.children[idx]) sw.children[idx].classList.add('sel');
   var bar = document.querySelector('.bar[data-k="'+annoCur+'"]');
-  if(bar){ bar.style.background = c||''; bar.style.borderColor = c||''; }
+  if(bar){ bar.style.background = c||''; if(!state.ireal) bar.style.borderColor = c||''; }
 }
 function annoSave(){
   if(annoCur==null) return;
@@ -1625,6 +1669,7 @@ function closeMenu(){ document.getElementById('sidebar').classList.remove('open'
 buildSetlistSelect();
 buildSidebar();
 refreshSaveStatus();
+document.body.classList.toggle('ireal', state.ireal);
 if(SONGS.length){ pick(SONGS[0].id); }
 </script>
 </body>

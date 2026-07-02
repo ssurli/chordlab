@@ -144,6 +144,16 @@ tornano affiancati nella battuta. La durata `*N` è riconosciuta anche dall'**ed
 (trasposizione, diagrammi e popover restano corretti). La modalità è rispettata anche in **Live**
 e in **stampa**.
 
+## Vista lead-sheet (stile iReal Pro)
+Il pulsante **🎼 iReal** nei controlli attiva/disattiva la vista **lead-sheet** in stile
+*iReal Pro* (di default **attiva**; la scelta è **persistita nel browser**). In questa vista le
+battute perdono i box separati e diventano un rigo continuo con **stanghette** verticali; l'ultima
+battuta di ogni sezione ha una **doppia stanghetta** e l'ultima battuta del brano una **stanghetta
+finale** (sottile+spessa). La tipografia di accordi ed etichette di sezione passa a un **serif**
+da spartito, con il basso degli slash-chord (es. `G/B`) rimpicciolito. La vista funziona anche in
+**Live**, in **stampa** (stanghette nere) e su **mobile** (2 battute per riga); disattivandola si
+torna alla vista classica a box, del tutto invariata.
+
 ## Metriche / time signatures (stile iReal Pro)
 Ogni brano ha una **metrica** (campo `meter`, default `4/4`) che ne fissa la **durata della
 battuta**: la metrica viene mostrata come **frazione impilata** all'inizio (e solo quando cambia,
