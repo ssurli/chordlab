@@ -129,6 +129,19 @@ Solo, Outro, Instrumental (la UI colora per tipo).
   time signature da lì in poi. `N/D` non collide con gli slash-chord (che iniziano con
   una nota). La durata totale della misura in movimenti da 1/4 è `N*4/D`.
 
+**Ripetizioni e segni di forma dentro `bars`** (stile iReal Pro):
+- una misura uguale a `'%'` ripete la battuta precedente (accordi, pesi, metrica); `'%%'`
+  ripete le due precedenti. Risolte da `resolveSongBars(song)`/`resolvedBarMap(song)` in
+  `index.html`, usate da griglia, player audio, generatore ABC ed export ChordPro;
+- una misura uguale (case-insensitive) a `'Fine'`, `'D.C. al Fine'`, `'D.C.'`,
+  `'D.S. al Coda'`, `'D.S.'`, `'To Coda'`, `'Coda'` o `'Segno'` è un **segno di forma**:
+  nessun accordo, mostrato come testo. Puramente visivo/di stampa, non altera l'ordine
+  di riproduzione lineare del player.
+
+Una **sezione** può avere `repeat: N` (intero ≥2): la fa suonare N volte di fila nel
+**player audio** (`buildSchedule`); nella griglia mostra solo un badge `🔁 ×N`, senza
+duplicare le battute visivamente.
+
 Inserire **Yesterday** completo e fedele + almeno 5 altri brani noti e semplici
 (es. Knockin' on Heaven's Door, Let It Be, Wonderwall, Stand By Me, Hey Jude...),
 ognuno con sezioni reali. Tonalità e accordi corretti.

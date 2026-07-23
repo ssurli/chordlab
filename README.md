@@ -14,7 +14,7 @@ schede accordi in stile *iReal Pro*: elenco accordi a misure, suddiviso per
 - 🎸 **Switch strumento**: chitarra · ukulele · piano. I diagrammi si
   ricalcolano per ogni accordo.
 - 👆 **Click su un accordo** → popover con diagramma + note che lo compongono.
-- 🖨 **Stampa** ottimizzata (nasconde UI, sfondo chiaro).
+- 🖨 **Stampa** ottimizzata (nasconde UI, sfondo chiaro, evita di spezzare una sezione tra due pagine).
 - 📱 Layout responsive con menu a scomparsa.
 
 ## Architettura (sviluppata con un team di agenti)
@@ -144,6 +144,16 @@ tornano affiancati nella battuta. La durata `*N` è riconosciuta anche dall'**ed
 (trasposizione, diagrammi e popover restano corretti). La modalità è rispettata anche in **Live**
 e in **stampa**.
 
+## Vista lead-sheet (stile iReal Pro)
+Il pulsante **🎼 iReal** nei controlli attiva/disattiva la vista **lead-sheet** in stile
+*iReal Pro* (di default **attiva**; la scelta è **persistita nel browser**). In questa vista le
+battute perdono i box separati e diventano un rigo continuo con **stanghette** verticali; l'ultima
+battuta di ogni sezione ha una **doppia stanghetta** e l'ultima battuta del brano una **stanghetta
+finale** (sottile+spessa). La tipografia di accordi ed etichette di sezione passa a un **serif**
+da spartito, con il basso degli slash-chord (es. `G/B`) rimpicciolito. La vista funziona anche in
+**Live**, in **stampa** (stanghette nere) e su **mobile** (2 battute per riga); disattivandola si
+torna alla vista classica a box, del tutto invariata.
+
 ## Metriche / time signatures (stile iReal Pro)
 Ogni brano ha una **metrica** (campo `meter`, default `4/4`) che ne fissa la **durata della
 battuta**: la metrica viene mostrata come **frazione impilata** all'inizio (e solo quando cambia,
@@ -162,6 +172,33 @@ Per **cambiare metrica a metà brano** basta iniziare una misura con `N/D` (in `
 Il token `N/D` non è confondibile con uno slash-chord (es. `G/B`), che inizia sempre con una nota.
 La metrica si conserva nell'**editor**, nell'**export ChordPro** (`{meter: N/D}`) e nell'import
 `.crd` (riga `Time:`/`Metrica:`).
+
+## Ripetizioni e segni di forma (stile iReal Pro)
+Una battuta uguale a **`%`** ripete la battuta precedente (accordi, pesi e metrica inclusi); **`%%`**
+ripete le **due** battute precedenti. Sono riconosciute in `bars`, nell'**editor** (senza avviso di
+simbolo sconosciuto), nella **griglia** (simbolo `%` grande al posto degli accordi), nel **player
+audio** (suona gli stessi accordi copiati) e nell'**export/import ChordPro** (round-trip fedele).
+
+Una battuta può anche contenere, **da sola**, un **segno di forma**: `Fine`, `D.C. al Fine`, `D.C.`,
+`D.S. al Coda`, `D.S.`, `To Coda`, `Coda`, `Segno`. Vengono mostrati come **indicazione testuale** al
+posto degli accordi (in corsivo, riquadro tratteggiato); sono puramente **visivi/di stampa** — non
+spostano la riproduzione del player, che prosegue linearmente.
+
+Ogni **sezione** può avere un campo **`repeat: N`** (impostabile nell'editor col campo **🔁×N** accanto
+al nome sezione) che la fa suonare **N volte di fila** nel **player audio**; nella griglia compare un
+badge `🔁 ×N` accanto al conteggio battute (la sezione non viene duplicata visivamente, come nelle
+stanghette di ripetizione di iReal Pro/pentagramma).
+
+```js
+{ name:'Chorus', repeat:2, bars:['C','%','Am F','%%'] }   // suona 2 volte: C C Am-F Am-F
+```
+
+## Editor: annulla/ripeti e scorciatoie
+Nell'editor in-app, **↶ Annulla modifica / ↷ Ripeti** (o **Ctrl+Z / Ctrl+Y**, fuori dai campi di testo)
+tornano indietro/avanti sulle azioni strutturali (aggiungi/rimuovi/sposta/**duplica** sezione — bottone
+**⧉**). **Ctrl+S** salva, **Esc** (fuori dai campi) chiude l'editor. In **modalità Live**, oltre alla
+barra spaziatrice per lo scorrimento, sono attive le frecce **◀/▶** (brano precedente/successivo),
+**▲/▼** (trasponi) ed **Esc** (esci).
 
 ## Player audio (ascolto accordi)
 Il pannello **🎧 Ascolta** sotto i controlli riproduce la progressione del brano con un piccolo
