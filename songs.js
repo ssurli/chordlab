@@ -723,6 +723,207 @@ window.SONGS = [
       { name: 'Durate', bars: ['4/4 C*3 G7', 'Am D7', 'F G7 C7 A7', 'Dm7*2 G7'] }
     ]
   }
+  ,
+  // ── Scaletta Acustica ──────────────────────────────────────────────────
+  {
+    id: 'war-pigs',
+    title: 'War Pigs', artist: 'Black Sabbath', year: '1970', key: 'Em', capo: 0,
+    tags: ['acustica', 'hard-rock', '70s', 'da-verificare'],
+    sections: [
+      { name: 'Intro', bars: ['Em', 'Em', 'Em', 'Em'] },
+      { name: 'Riff', bars: ['Em', 'Em', 'Em', 'Em'] },
+      { name: 'Verse', bars: ['Em', 'Em', 'Em', 'Em', 'Em', 'Em', 'Em', 'Em'] },
+      { name: 'Bridge', bars: ['Em', 'G', 'A', 'Em'] },
+      { name: 'Outro', bars: ['Em', 'G', 'A', 'Em'] }
+    ]
+  },
+  {
+    id: 'tush',
+    title: 'Tush', artist: 'ZZ Top', year: '1975', key: 'G', capo: 0,
+    tags: ['acustica', 'blues-rock', '70s', 'shuffle'],
+    sections: [
+      { name: 'Intro', bars: ['G', 'G', 'G', 'G'] },
+      { name: 'Verse', bars: ['G', 'G', 'G', 'G', 'C', 'C', 'G', 'G', 'D', 'C', 'G', 'D'] },
+      { name: 'Solo', bars: ['G', 'G', 'G', 'G', 'C', 'C', 'G', 'G', 'D', 'C', 'G', 'D'] }
+    ]
+  },
+  {
+    id: 'shoot-to-thrill',
+    title: 'Shoot to Thrill', artist: 'AC/DC', year: '1980', key: 'A', capo: 0,
+    tags: ['acustica', 'hard-rock', '80s', 'da-verificare'],
+    sections: [
+      { name: 'Intro', bars: ['A', 'A', 'A', 'A'] },
+      { name: 'Verse', bars: ['A', 'A', 'A', 'A', 'A', 'A', 'A', 'A'] },
+      { name: 'Chorus', bars: ['D', 'A', 'D', 'A', 'E', 'E', 'A', 'A'] }
+    ]
+  },
+  {
+    id: 'back-in-black',
+    title: 'Back in Black', artist: 'AC/DC', year: '1980', key: 'E', capo: 0,
+    tags: ['acustica', 'hard-rock', '80s'],
+    sections: [
+      { name: 'Intro', bars: ['E', 'D A', 'E', 'D A'] },
+      { name: 'Verse', bars: ['E', 'D A', 'E', 'D A', 'E', 'D A', 'E', 'D A'] },
+      { name: 'Chorus', bars: ['E', 'D A', 'E', 'D A', 'B', 'A', 'E', 'E'] }
+    ]
+  },
+  {
+    id: 'thunderstruck',
+    title: 'Thunderstruck', artist: 'AC/DC', year: '1990', key: 'B', capo: 0,
+    tags: ['acustica', 'hard-rock', '90s', 'da-verificare'],
+    sections: [
+      { name: 'Intro', bars: ['B', 'B', 'B', 'B'] },
+      { name: 'Riff', bars: ['B', 'B', 'A', 'B'] },
+      { name: 'Verse', bars: ['B', 'B', 'B', 'B', 'B', 'B', 'B', 'B'] },
+      { name: 'Chorus', bars: ['B', 'A', 'E', 'B', 'B', 'A', 'E', 'B'] }
+    ]
+  },
+  {
+    id: 'the-jack',
+    title: 'The Jack', artist: 'AC/DC', year: '1975', key: 'A', capo: 0,
+    tags: ['acustica', 'blues', '70s', 'slow-blues'],
+    sections: [
+      { name: 'Intro', bars: ['A', 'A', 'A', 'A'] },
+      { name: 'Verse', bars: ['A', 'A', 'A', 'A', 'D', 'D', 'A', 'A', 'E', 'D', 'A', 'E'] },
+      { name: 'Solo', bars: ['A', 'A', 'A', 'A', 'D', 'D', 'A', 'A', 'E', 'D', 'A', 'E'] }
+    ]
+  },
+  {
+    id: 'live-wire',
+    title: 'Live Wire', artist: 'AC/DC', year: '1975', key: 'E', capo: 0,
+    tags: ['acustica', 'hard-rock', '70s', 'da-verificare'],
+    sections: [
+      { name: 'Intro', bars: ['E', 'E', 'E', 'E'] },
+      { name: 'Verse', bars: ['E', 'E', 'E', 'E', 'E', 'E', 'E', 'E'] },
+      { name: 'Chorus', bars: ['A', 'E', 'A', 'E', 'B', 'A', 'E', 'E'] }
+    ]
+  },
+  {
+    id: 'hells-bells',
+    title: "Hells Bells", artist: 'AC/DC', year: '1980', key: 'Am', capo: 0,
+    tags: ['acustica', 'hard-rock', '80s', 'da-verificare'],
+    sections: [
+      { name: 'Intro', bars: ['Am', 'Am', 'Am', 'Am'] },
+      { name: 'Verse', bars: ['A', 'A', 'A', 'A', 'G', 'D', 'A', 'A'] },
+      { name: 'Chorus', bars: ['D', 'A', 'D', 'A', 'E', 'D', 'A', 'A'] }
+    ]
+  },
+  {
+    id: 'fade-to-black',
+    title: 'Fade to Black', artist: 'Metallica', year: '1984', key: 'Bm', capo: 0,
+    tags: ['acustica', 'metal', '80s', 'arpeggio'],
+    sections: [
+      { name: 'Intro', bars: ['Bm', 'G', 'D', 'A', 'Bm', 'G', 'D', 'A'] },
+      { name: 'Verse', bars: ['Bm', 'G', 'D', 'A', 'Bm', 'G', 'D', 'A'] },
+      { name: 'Pre-Chorus', bars: ['G', 'D', 'A', 'Bm'] },
+      { name: 'Chorus', bars: ['Bm', 'A', 'G', 'A', 'Bm', 'A', 'G', 'A'] },
+      { name: 'Outro', bars: ['Bm', 'A', 'G', 'G'] }
+    ]
+  },
+  {
+    id: 'personal-jesus',
+    title: 'Personal Jesus', artist: 'Johnny Cash', year: '2002', key: 'Em', capo: 0,
+    tags: ['acustica', 'cover', 'blues', 'da-verificare'],
+    sections: [
+      { name: 'Intro', bars: ['Em', 'Em', 'Em', 'Em'] },
+      { name: 'Verse', bars: ['Em', 'Em', 'Em', 'Em', 'Em', 'Em', 'Em', 'Em'] },
+      { name: 'Chorus', bars: ['C', 'D', 'Em', 'Em', 'C', 'D', 'Em', 'Em'] }
+    ]
+  },
+  {
+    id: 'heart-of-gold',
+    title: 'Heart of Gold', artist: 'Neil Young', year: '1972', key: 'Em', capo: 0,
+    tags: ['acustica', 'folk', '70s', 'classic'],
+    sections: [
+      { name: 'Intro', bars: ['Em', 'Em', 'Em', 'Em'] },
+      { name: 'Verse', bars: ['Em', 'C D', 'G', 'Em', 'Em', 'C D', 'G', 'Em'] },
+      { name: 'Chorus', bars: ['G', 'D', 'Em', 'Em', 'G', 'D', 'Em', 'Em'] },
+      { name: 'Outro', bars: ['Em', 'C D', 'G', 'Em'] }
+    ]
+  },
+  {
+    id: 'sangue-impazzito',
+    title: 'Sangue impazzito', artist: 'Timoria', year: '1993', key: 'Am', capo: 0,
+    tags: ['acustica', 'rock', 'italiano', '90s', 'da-verificare'],
+    sections: [
+      { name: 'Intro', bars: ['Am', 'F', 'C', 'G'] },
+      { name: 'Verse', bars: ['Am', 'F', 'C', 'G', 'Am', 'F', 'C', 'G'] },
+      { name: 'Chorus', bars: ['F', 'C', 'G', 'Am', 'F', 'C', 'G', 'G'] }
+    ]
+  },
+  {
+    id: 'creep',
+    title: 'Creep', artist: 'Radiohead', year: '1992', key: 'G', capo: 0,
+    tags: ['acustica', 'alternative', '90s'],
+    sections: [
+      { name: 'Intro', bars: ['G', 'G', 'B', 'B', 'C', 'C', 'Cm', 'Cm'] },
+      { name: 'Verse', bars: ['G', 'G', 'B', 'B', 'C', 'C', 'Cm', 'Cm'] },
+      { name: 'Chorus', bars: ['G', 'G', 'B', 'B', 'C', 'C', 'Cm', 'Cm'] },
+      { name: 'Bridge', bars: ['Cm', 'Cm', 'Cm', 'Cm'] }
+    ]
+  },
+  {
+    id: 'lo-chiamavano-trinita',
+    title: 'Lo chiamavano Trinità', artist: 'Franco Micalizzi', year: '1970', key: 'G', capo: 0,
+    tags: ['acustica', 'colonna-sonora', 'italiano', '70s', 'da-verificare'],
+    sections: [
+      { name: 'Intro', bars: ['G', 'G', 'D', 'D'] },
+      { name: 'Verse', bars: ['G', 'G', 'C', 'C', 'G', 'G', 'D', 'G'] },
+      { name: 'Chorus', bars: ['C', 'G', 'D', 'G', 'C', 'G', 'D', 'G'] }
+    ]
+  },
+  {
+    id: 'toxicity',
+    title: 'Toxicity', artist: 'System of a Down', year: '2001', key: 'C#m', capo: 0,
+    tags: ['acustica', 'metal', '2000s', 'da-verificare'],
+    sections: [
+      { name: 'Intro', bars: ['C#m', 'A', 'E', 'B'] },
+      { name: 'Verse', bars: ['C#m', 'C#m', 'A', 'A', 'E', 'E', 'B', 'B'] },
+      { name: 'Chorus', bars: ['A', 'E', 'B', 'C#m', 'A', 'E', 'B', 'B'] }
+    ]
+  },
+  {
+    id: 'aerials',
+    title: 'Aerials', artist: 'System of a Down', year: '2001', key: 'Bm', capo: 0,
+    tags: ['acustica', 'metal', '2000s', 'da-verificare'],
+    sections: [
+      { name: 'Intro', bars: ['Bm', 'A', 'G', 'F#'] },
+      { name: 'Verse', bars: ['Bm', 'A', 'G', 'F#', 'Bm', 'A', 'G', 'F#'] },
+      { name: 'Chorus', bars: ['Bm', 'G', 'D', 'A', 'Bm', 'G', 'D', 'A'] }
+    ]
+  },
+  {
+    id: 'chop-suey',
+    title: 'Chop Suey!', artist: 'System of a Down', year: '2001', key: 'Em', capo: 0,
+    tags: ['acustica', 'metal', '2000s', 'da-verificare'],
+    sections: [
+      { name: 'Intro', bars: ['Em', 'C', 'G', 'D'] },
+      { name: 'Verse', bars: ['Em', 'Em', 'Em', 'Em', 'Em', 'Em', 'Em', 'Em'] },
+      { name: 'Chorus', bars: ['C', 'G', 'D', 'Em', 'C', 'G', 'D', 'Em'] },
+      { name: 'Outro', bars: ['C', 'G', 'D', 'Em'] }
+    ]
+  },
+  {
+    id: 'babe-im-gonna-leave-you',
+    title: "Babe I'm Gonna Leave You", artist: 'Led Zeppelin', year: '1969', key: 'Am', capo: 0,
+    tags: ['acustica', 'folk-rock', '60s', 'arpeggio'],
+    sections: [
+      { name: 'Intro', bars: ['Am', 'Am/G#', 'Am/G', 'D/F#', 'Fmaj7', 'E7'] },
+      { name: 'Verse', bars: ['Am', 'Am/G#', 'Am/G', 'D/F#', 'Fmaj7', 'E7'] },
+      { name: 'Chorus', bars: ['Am', 'G', 'F', 'E7', 'Am', 'G', 'F', 'E7'] },
+      { name: 'Bridge', bars: ['C', 'G', 'Am', 'Am'] }
+    ]
+  },
+  {
+    id: 'wasted-years',
+    title: 'Wasted Years', artist: 'Iron Maiden', year: '1986', key: 'A', capo: 0,
+    tags: ['acustica', 'metal', '80s', 'da-verificare'],
+    sections: [
+      { name: 'Intro', bars: ['A', 'A', 'A', 'A'] },
+      { name: 'Verse', bars: ['F#m', 'D', 'A', 'E', 'F#m', 'D', 'A', 'E'] },
+      { name: 'Chorus', bars: ['D', 'A', 'E', 'F#m', 'D', 'A', 'E', 'E'] }
+    ]
+  }
 ];
 
 // ── Scalette (setlist) ───────────────────────────────────────────────────
@@ -755,6 +956,17 @@ window.SETLISTS = [
       'wind-of-change', 'do-it-again', 'everything-i-do', 'despacito', 'you-never-can-tell',
       'stella-stai', 'medley-gianna', 'wish-you-were-here', '50-special', 'balliamo-sul-mondo',
       'sweet-child-o-mine'
+    ]
+  },
+  {
+    id: 'scaletta-acustica',
+    name: 'Scaletta Acustica',
+    songs: [
+      'war-pigs', 'mr-crowley', 'tush', 'shoot-to-thrill', 'back-in-black',
+      'thunderstruck', 'the-jack', 'live-wire', 'hells-bells', 'fade-to-black',
+      'whiskey-in-the-jar', 'personal-jesus', 'heart-of-gold', 'sangue-impazzito',
+      'creep', 'karma-police', 'lo-chiamavano-trinita', 'toxicity', 'aerials',
+      'chop-suey', 'babe-im-gonna-leave-you', 'wasted-years'
     ]
   }
 ];
