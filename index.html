@@ -239,6 +239,37 @@ body.annotate .bar:hover{outline:2px dashed var(--accent);outline-offset:-2px}
 #cp-out:focus{border-color:var(--accent)}
 #cp-msg{color:var(--accent2);min-height:16px}
 
+/* ===== VISTA "SPARTITO" (stile iReal Pro: foglio chiaro, accordi neri) =====
+   Attiva/disattiva con il toggle 📄 Spartito. La cornice (sidebar/topbar)
+   resta scura; solo l'area del brano diventa un foglio chiaro. Disattivata
+   automaticamente in modalità Live (resta scura per la leggibilità sul palco). */
+body.paper:not(.live) #main{background:#17130e}
+body.paper:not(.live) #content{background:#faf7ef;color:#1c1a16;border-radius:10px;padding:22px 26px 30px;box-shadow:0 4px 24px rgba(0,0,0,.35);max-width:920px;margin:0 auto}
+body.paper:not(.live) .song-header h2{color:#141210}
+body.paper:not(.live) .song-header .meta{color:#6b6459}
+body.paper:not(.live) .capo-chip{color:#8a8070}
+body.paper:not(.live) .ctl-label{color:#8a8070}
+body.paper:not(.live) .key-display{color:#141210}
+body.paper:not(.live) #content .btn{background:#efe9da;border-color:#d8cfba;color:#3a3528}
+body.paper:not(.live) #content .btn:hover{background:#e3dac4;color:#1c1a16}
+body.paper:not(.live) #content .inst-btn.active{background:#b33b2e;border-color:#b33b2e;color:#fff}
+body.paper:not(.live) .annot-hint{background:#efe9da;color:#3a3528;border-color:#d8cfba}
+body.paper:not(.live) .section-label{background:#b33b2e;color:#fff}
+body.paper:not(.live) .sec-count{color:#8a8070}
+body.paper:not(.live) .bar{background:#fff;border:1px solid #c9c0ab;border-radius:3px}
+body.paper:not(.live) .bar.empty{background:repeating-linear-gradient(45deg,#f1ece0,#f1ece0 6px,#fff 6px,#fff 12px);opacity:1}
+body.paper:not(.live) .bar.subdiv .cell{border-left:1px dashed #c9c0ab}
+body.paper:not(.live) .chord{color:#171512}
+body.paper:not(.live) .timesig{color:#b33b2e}
+body.paper:not(.live) .cell.playing{background:rgba(179,59,46,.16)}
+body.paper:not(.live) .bar.playing{outline-color:#b33b2e}
+body.paper:not(.live) .diag-section .section-title{color:#6b6459}
+body.paper:not(.live) .diag-card{background:#fff;border:1px solid #c9c0ab}
+body.paper:not(.live) .transport{background:#efe9da;border-color:#d8cfba}
+body.paper:not(.live) .transport .play-btn{color:#3a3528}
+body.paper:not(.live) .transport .play-btn.on{background:#b33b2e;border-color:#b33b2e;color:#fff}
+body.paper:not(.live) .bpm-val{color:#6b6459}
+
 /* ===== TOUCH / TABLET (iPad, Android): target più grandi, niente zoom su focus ===== */
 @media (pointer:coarse){
   .btn{padding:9px 14px;font-size:14px}
@@ -450,7 +481,7 @@ var userStore = loadStore();   // { id: songObject } — override + brani nuovi 
 var SONGS = [];
 rebuildSongs();
 
-var state = { sel: null, transpose: 0, instrument: 'guitar', showAll: true, filter: '', setlist: '', italian: false, editing: false, live: false, annot: false, chordFs: 0, scrollOn: false, scrollSpeed: 1, subdiv: true, bpm: 90, metronome: false };
+var state = { sel: null, transpose: 0, instrument: 'guitar', showAll: true, filter: '', setlist: '', italian: false, editing: false, live: false, annot: false, chordFs: 0, scrollOn: false, scrollSpeed: 1, subdiv: true, bpm: 90, metronome: false, paper: true };
 
 function escHtml(v){ return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
@@ -772,6 +803,7 @@ function resetKey(){ state.transpose = 0; render(); }
 function setInstrument(id){ state.instrument = id; render(); }
 function toggleAll(){ state.showAll = !state.showAll; render(); }
 function toggleSubdiv(){ state.subdiv = !state.subdiv; render(); }
+function togglePaper(){ state.paper = !state.paper; document.body.classList.toggle('paper', state.paper); render(); }
 
 /* ================= PLAYER AUDIO (Web Audio) ================= */
 // Costruisce la sequenza da suonare: ogni misura dura 4 beat, ripartiti tra gli
@@ -865,6 +897,7 @@ function render(){
     '<div class="ctl-group" style="margin-left:auto"><span class="ctl-label">Strumento</span>'+instBtns+'</div>'+
     '<span class="btn" onclick="toggleAll()">'+(state.showAll?'Nascondi':'Mostra')+' diagrammi</span>'+
     '<span class="btn'+(state.subdiv?' inst-btn active':'')+'" onclick="toggleSubdiv()" title="Suddividi graficamente le battute in base al numero di accordi">📐 Suddividi</span>'+
+    '<span class="btn'+(state.paper?' inst-btn active':'')+'" onclick="togglePaper()" title="Vista spartito in stile iReal Pro: foglio chiaro con accordi neri">📄 Spartito</span>'+
     '<span class="btn" onclick="edEdit()">✏️ Modifica</span>'+
     '<span class="btn'+(state.annot?' inst-btn active':'')+'" onclick="toggleAnnotate()">🖍 Annota</span>'+
     '<span class="btn" onclick="toggleLive()">🎤 Live</span>'+
@@ -1583,6 +1616,7 @@ function closeMenu(){ document.getElementById('sidebar').classList.remove('open'
 buildSetlistSelect();
 buildSidebar();
 refreshSaveStatus();
+document.body.classList.toggle('paper', state.paper);
 if(SONGS.length){ pick(SONGS[0].id); }
 </script>
 </body>
