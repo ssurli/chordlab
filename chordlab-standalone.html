@@ -222,6 +222,19 @@ body.annotate .bar:hover{outline:2px dashed var(--accent);outline-offset:-2px}
 .bk-meta{display:flex;flex-direction:column;gap:2px;font-size:13px}
 .bk-meta span{font-size:11px;color:var(--text3)}
 .bk-act{display:flex;gap:6px;flex-shrink:0}
+.tuner-box{width:min(440px,94vw)}
+.tuner-display{display:flex;flex-direction:column;align-items:center;gap:6px;margin:10px 0 16px}
+.tuner-note{font-size:60px;font-weight:700;color:var(--accent2);line-height:1;min-height:68px;display:flex;align-items:center;justify-content:center;font-variant-numeric:tabular-nums}
+.tuner-note.in-tune{color:#5a9a6a}
+.tuner-freq{font-size:13px;color:var(--text3);font-family:monospace;min-height:16px}
+.tuner-meter{width:100%;max-width:320px;margin-top:4px}
+.tuner-meter-scale{display:flex;justify-content:space-between;font-size:10px;color:var(--text3);padding:0 2px}
+.tuner-meter-track{position:relative;height:10px;background:var(--bg);border:1px solid var(--border2);border-radius:5px;margin-top:3px;overflow:hidden}
+.tuner-meter-center{position:absolute;left:50%;top:0;bottom:0;width:2px;background:var(--border2);transform:translateX(-1px)}
+.tuner-meter-needle{position:absolute;top:0;bottom:0;width:4px;border-radius:2px;left:50%;background:var(--accent);transform:translateX(-2px);transition:left .08s linear,background .08s linear}
+.tuner-strings{display:flex;justify-content:center;gap:6px;flex-wrap:wrap;margin-bottom:4px}
+.tuner-string{font-size:12px;padding:4px 9px;border-radius:6px;background:var(--bg3);border:1px solid var(--border2);color:var(--text2)}
+.tuner-string.near{border-color:var(--accent);color:var(--accent2)}
 #cp-out{width:100%;height:260px;background:var(--bg);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:monospace;font-size:13px;padding:8px;outline:none;resize:vertical;white-space:pre}
 #cp-out:focus{border-color:var(--accent)}
 #cp-msg{color:var(--accent2);min-height:16px}
@@ -288,6 +301,7 @@ body.annotate .bar:hover{outline:2px dashed var(--accent);outline-offset:-2px}
       <span class="btn" onclick="edExport()" title="Esporta le tue modifiche (JSON)">⬇︎ Esporta</span>
       <span class="btn" onclick="document.getElementById('imp-file').click()" title="Importa modifiche (JSON)">⬆︎ Importa</span>
       <span class="btn" onclick="openRestore()" title="Backup automatici locali: ripristina uno stato precedente">↺ Ripristina</span>
+      <span class="btn" onclick="tunerOpen()" title="Accordatore cromatico (usa il microfono)">🎵 Accordatore</span>
     </div>
     <div id="save-status" class="save-status" title="Le modifiche sono salvate automaticamente nel browser. Usa Esporta per un backup su file."></div>
     <input id="imp-file" type="file" accept="application/json,.json" style="display:none">
@@ -389,6 +403,27 @@ body.annotate .bar:hover{outline:2px dashed var(--accent);outline-offset:-2px}
       <span class="btn" onclick="closeRestore()">Chiudi</span>
     </div>
     <div class="abc-hint">Ripristinando uno stato precedente, quello attuale viene comunque salvato come nuovo backup: l'operazione è reversibile.</div>
+  </div>
+</div>
+
+<div id="tunermodal" onclick="if(event.target===this)tunerClose()">
+  <div class="abc-box tuner-box">
+    <div class="abc-head"><b>🎵 Accordatore cromatico</b><span class="abc-x" onclick="tunerClose()">×</span></div>
+    <p class="score-sub">Consenti l'accesso al microfono e suona una nota: nome, frequenza e scostamento in cent vengono mostrati in tempo reale.</p>
+    <div class="tuner-display">
+      <div class="tuner-note" id="tuner-note">—</div>
+      <div class="tuner-freq" id="tuner-freq">&nbsp;</div>
+      <div class="tuner-meter">
+        <div class="tuner-meter-scale"><span>-50</span><span>0</span><span>+50</span></div>
+        <div class="tuner-meter-track"><div class="tuner-meter-center"></div><div class="tuner-meter-needle" id="tuner-needle"></div></div>
+      </div>
+    </div>
+    <div class="tuner-strings" id="tuner-strings"></div>
+    <div class="abc-actions" style="margin-top:10px">
+      <span class="btn primary" id="tuner-toggle" onclick="tunerToggle()">🎤 Avvia microfono</span>
+      <span class="btn" onclick="tunerClose()">Chiudi</span>
+    </div>
+    <div class="abc-hint" id="tuner-msg"></div>
   </div>
 </div>
 
@@ -2306,6 +2341,207 @@ window.SONGS = [
       { name: 'Durate', bars: ['4/4 C*3 G7', 'Am D7', 'F G7 C7 A7', 'Dm7*2 G7'] }
     ]
   }
+  ,
+  // ── Scaletta Acustica ──────────────────────────────────────────────────
+  {
+    id: 'war-pigs',
+    title: 'War Pigs', artist: 'Black Sabbath', year: '1970', key: 'Em', capo: 0,
+    tags: ['acustica', 'hard-rock', '70s', 'da-verificare'],
+    sections: [
+      { name: 'Intro', bars: ['Em', 'Em', 'Em', 'Em'] },
+      { name: 'Riff', bars: ['Em', 'Em', 'Em', 'Em'] },
+      { name: 'Verse', bars: ['Em', 'Em', 'Em', 'Em', 'Em', 'Em', 'Em', 'Em'] },
+      { name: 'Bridge', bars: ['Em', 'G', 'A', 'Em'] },
+      { name: 'Outro', bars: ['Em', 'G', 'A', 'Em'] }
+    ]
+  },
+  {
+    id: 'tush',
+    title: 'Tush', artist: 'ZZ Top', year: '1975', key: 'G', capo: 0,
+    tags: ['acustica', 'blues-rock', '70s', 'shuffle'],
+    sections: [
+      { name: 'Intro', bars: ['G', 'G', 'G', 'G'] },
+      { name: 'Verse', bars: ['G', 'G', 'G', 'G', 'C', 'C', 'G', 'G', 'D', 'C', 'G', 'D'] },
+      { name: 'Solo', bars: ['G', 'G', 'G', 'G', 'C', 'C', 'G', 'G', 'D', 'C', 'G', 'D'] }
+    ]
+  },
+  {
+    id: 'shoot-to-thrill',
+    title: 'Shoot to Thrill', artist: 'AC/DC', year: '1980', key: 'A', capo: 0,
+    tags: ['acustica', 'hard-rock', '80s', 'da-verificare'],
+    sections: [
+      { name: 'Intro', bars: ['A', 'A', 'A', 'A'] },
+      { name: 'Verse', bars: ['A', 'A', 'A', 'A', 'A', 'A', 'A', 'A'] },
+      { name: 'Chorus', bars: ['D', 'A', 'D', 'A', 'E', 'E', 'A', 'A'] }
+    ]
+  },
+  {
+    id: 'back-in-black',
+    title: 'Back in Black', artist: 'AC/DC', year: '1980', key: 'E', capo: 0,
+    tags: ['acustica', 'hard-rock', '80s'],
+    sections: [
+      { name: 'Intro', bars: ['E', 'D A', 'E', 'D A'] },
+      { name: 'Verse', bars: ['E', 'D A', 'E', 'D A', 'E', 'D A', 'E', 'D A'] },
+      { name: 'Chorus', bars: ['E', 'D A', 'E', 'D A', 'B', 'A', 'E', 'E'] }
+    ]
+  },
+  {
+    id: 'thunderstruck',
+    title: 'Thunderstruck', artist: 'AC/DC', year: '1990', key: 'B', capo: 0,
+    tags: ['acustica', 'hard-rock', '90s', 'da-verificare'],
+    sections: [
+      { name: 'Intro', bars: ['B', 'B', 'B', 'B'] },
+      { name: 'Riff', bars: ['B', 'B', 'A', 'B'] },
+      { name: 'Verse', bars: ['B', 'B', 'B', 'B', 'B', 'B', 'B', 'B'] },
+      { name: 'Chorus', bars: ['B', 'A', 'E', 'B', 'B', 'A', 'E', 'B'] }
+    ]
+  },
+  {
+    id: 'the-jack',
+    title: 'The Jack', artist: 'AC/DC', year: '1975', key: 'A', capo: 0,
+    tags: ['acustica', 'blues', '70s', 'slow-blues'],
+    sections: [
+      { name: 'Intro', bars: ['A', 'A', 'A', 'A'] },
+      { name: 'Verse', bars: ['A', 'A', 'A', 'A', 'D', 'D', 'A', 'A', 'E', 'D', 'A', 'E'] },
+      { name: 'Solo', bars: ['A', 'A', 'A', 'A', 'D', 'D', 'A', 'A', 'E', 'D', 'A', 'E'] }
+    ]
+  },
+  {
+    id: 'live-wire',
+    title: 'Live Wire', artist: 'AC/DC', year: '1975', key: 'E', capo: 0,
+    tags: ['acustica', 'hard-rock', '70s', 'da-verificare'],
+    sections: [
+      { name: 'Intro', bars: ['E', 'E', 'E', 'E'] },
+      { name: 'Verse', bars: ['E', 'E', 'E', 'E', 'E', 'E', 'E', 'E'] },
+      { name: 'Chorus', bars: ['A', 'E', 'A', 'E', 'B', 'A', 'E', 'E'] }
+    ]
+  },
+  {
+    id: 'hells-bells',
+    title: "Hells Bells", artist: 'AC/DC', year: '1980', key: 'Am', capo: 0,
+    tags: ['acustica', 'hard-rock', '80s', 'da-verificare'],
+    sections: [
+      { name: 'Intro', bars: ['Am', 'Am', 'Am', 'Am'] },
+      { name: 'Verse', bars: ['A', 'A', 'A', 'A', 'G', 'D', 'A', 'A'] },
+      { name: 'Chorus', bars: ['D', 'A', 'D', 'A', 'E', 'D', 'A', 'A'] }
+    ]
+  },
+  {
+    id: 'fade-to-black',
+    title: 'Fade to Black', artist: 'Metallica', year: '1984', key: 'Bm', capo: 0,
+    tags: ['acustica', 'metal', '80s', 'arpeggio'],
+    sections: [
+      { name: 'Intro', bars: ['Bm', 'G', 'D', 'A', 'Bm', 'G', 'D', 'A'] },
+      { name: 'Verse', bars: ['Bm', 'G', 'D', 'A', 'Bm', 'G', 'D', 'A'] },
+      { name: 'Pre-Chorus', bars: ['G', 'D', 'A', 'Bm'] },
+      { name: 'Chorus', bars: ['Bm', 'A', 'G', 'A', 'Bm', 'A', 'G', 'A'] },
+      { name: 'Outro', bars: ['Bm', 'A', 'G', 'G'] }
+    ]
+  },
+  {
+    id: 'personal-jesus',
+    title: 'Personal Jesus', artist: 'Johnny Cash', year: '2002', key: 'Em', capo: 0,
+    tags: ['acustica', 'cover', 'blues', 'da-verificare'],
+    sections: [
+      { name: 'Intro', bars: ['Em', 'Em', 'Em', 'Em'] },
+      { name: 'Verse', bars: ['Em', 'Em', 'Em', 'Em', 'Em', 'Em', 'Em', 'Em'] },
+      { name: 'Chorus', bars: ['C', 'D', 'Em', 'Em', 'C', 'D', 'Em', 'Em'] }
+    ]
+  },
+  {
+    id: 'heart-of-gold',
+    title: 'Heart of Gold', artist: 'Neil Young', year: '1972', key: 'Em', capo: 0,
+    tags: ['acustica', 'folk', '70s', 'classic'],
+    sections: [
+      { name: 'Intro', bars: ['Em', 'Em', 'Em', 'Em'] },
+      { name: 'Verse', bars: ['Em', 'C D', 'G', 'Em', 'Em', 'C D', 'G', 'Em'] },
+      { name: 'Chorus', bars: ['G', 'D', 'Em', 'Em', 'G', 'D', 'Em', 'Em'] },
+      { name: 'Outro', bars: ['Em', 'C D', 'G', 'Em'] }
+    ]
+  },
+  {
+    id: 'sangue-impazzito',
+    title: 'Sangue impazzito', artist: 'Timoria', year: '1993', key: 'Am', capo: 0,
+    tags: ['acustica', 'rock', 'italiano', '90s', 'da-verificare'],
+    sections: [
+      { name: 'Intro', bars: ['Am', 'F', 'C', 'G'] },
+      { name: 'Verse', bars: ['Am', 'F', 'C', 'G', 'Am', 'F', 'C', 'G'] },
+      { name: 'Chorus', bars: ['F', 'C', 'G', 'Am', 'F', 'C', 'G', 'G'] }
+    ]
+  },
+  {
+    id: 'creep',
+    title: 'Creep', artist: 'Radiohead', year: '1992', key: 'G', capo: 0,
+    tags: ['acustica', 'alternative', '90s'],
+    sections: [
+      { name: 'Intro', bars: ['G', 'G', 'B', 'B', 'C', 'C', 'Cm', 'Cm'] },
+      { name: 'Verse', bars: ['G', 'G', 'B', 'B', 'C', 'C', 'Cm', 'Cm'] },
+      { name: 'Chorus', bars: ['G', 'G', 'B', 'B', 'C', 'C', 'Cm', 'Cm'] },
+      { name: 'Bridge', bars: ['Cm', 'Cm', 'Cm', 'Cm'] }
+    ]
+  },
+  {
+    id: 'lo-chiamavano-trinita',
+    title: 'Lo chiamavano Trinità', artist: 'Franco Micalizzi', year: '1970', key: 'G', capo: 0,
+    tags: ['acustica', 'colonna-sonora', 'italiano', '70s', 'da-verificare'],
+    sections: [
+      { name: 'Intro', bars: ['G', 'G', 'D', 'D'] },
+      { name: 'Verse', bars: ['G', 'G', 'C', 'C', 'G', 'G', 'D', 'G'] },
+      { name: 'Chorus', bars: ['C', 'G', 'D', 'G', 'C', 'G', 'D', 'G'] }
+    ]
+  },
+  {
+    id: 'toxicity',
+    title: 'Toxicity', artist: 'System of a Down', year: '2001', key: 'C#m', capo: 0,
+    tags: ['acustica', 'metal', '2000s', 'da-verificare'],
+    sections: [
+      { name: 'Intro', bars: ['C#m', 'A', 'E', 'B'] },
+      { name: 'Verse', bars: ['C#m', 'C#m', 'A', 'A', 'E', 'E', 'B', 'B'] },
+      { name: 'Chorus', bars: ['A', 'E', 'B', 'C#m', 'A', 'E', 'B', 'B'] }
+    ]
+  },
+  {
+    id: 'aerials',
+    title: 'Aerials', artist: 'System of a Down', year: '2001', key: 'Bm', capo: 0,
+    tags: ['acustica', 'metal', '2000s', 'da-verificare'],
+    sections: [
+      { name: 'Intro', bars: ['Bm', 'A', 'G', 'F#'] },
+      { name: 'Verse', bars: ['Bm', 'A', 'G', 'F#', 'Bm', 'A', 'G', 'F#'] },
+      { name: 'Chorus', bars: ['Bm', 'G', 'D', 'A', 'Bm', 'G', 'D', 'A'] }
+    ]
+  },
+  {
+    id: 'chop-suey',
+    title: 'Chop Suey!', artist: 'System of a Down', year: '2001', key: 'Em', capo: 0,
+    tags: ['acustica', 'metal', '2000s', 'da-verificare'],
+    sections: [
+      { name: 'Intro', bars: ['Em', 'C', 'G', 'D'] },
+      { name: 'Verse', bars: ['Em', 'Em', 'Em', 'Em', 'Em', 'Em', 'Em', 'Em'] },
+      { name: 'Chorus', bars: ['C', 'G', 'D', 'Em', 'C', 'G', 'D', 'Em'] },
+      { name: 'Outro', bars: ['C', 'G', 'D', 'Em'] }
+    ]
+  },
+  {
+    id: 'babe-im-gonna-leave-you',
+    title: "Babe I'm Gonna Leave You", artist: 'Led Zeppelin', year: '1969', key: 'Am', capo: 0,
+    tags: ['acustica', 'folk-rock', '60s', 'arpeggio'],
+    sections: [
+      { name: 'Intro', bars: ['Am', 'Am/G#', 'Am/G', 'D/F#', 'Fmaj7', 'E7'] },
+      { name: 'Verse', bars: ['Am', 'Am/G#', 'Am/G', 'D/F#', 'Fmaj7', 'E7'] },
+      { name: 'Chorus', bars: ['Am', 'G', 'F', 'E7', 'Am', 'G', 'F', 'E7'] },
+      { name: 'Bridge', bars: ['C', 'G', 'Am', 'Am'] }
+    ]
+  },
+  {
+    id: 'wasted-years',
+    title: 'Wasted Years', artist: 'Iron Maiden', year: '1986', key: 'A', capo: 0,
+    tags: ['acustica', 'metal', '80s', 'da-verificare'],
+    sections: [
+      { name: 'Intro', bars: ['A', 'A', 'A', 'A'] },
+      { name: 'Verse', bars: ['F#m', 'D', 'A', 'E', 'F#m', 'D', 'A', 'E'] },
+      { name: 'Chorus', bars: ['D', 'A', 'E', 'F#m', 'D', 'A', 'E', 'E'] }
+    ]
+  }
 ];
 
 // ── Scalette (setlist) ───────────────────────────────────────────────────
@@ -2338,6 +2574,17 @@ window.SETLISTS = [
       'wind-of-change', 'do-it-again', 'everything-i-do', 'despacito', 'you-never-can-tell',
       'stella-stai', 'medley-gianna', 'wish-you-were-here', '50-special', 'balliamo-sul-mondo',
       'sweet-child-o-mine'
+    ]
+  },
+  {
+    id: 'scaletta-acustica',
+    name: 'Scaletta Acustica',
+    songs: [
+      'war-pigs', 'mr-crowley', 'tush', 'shoot-to-thrill', 'back-in-black',
+      'thunderstruck', 'the-jack', 'live-wire', 'hells-bells', 'fade-to-black',
+      'whiskey-in-the-jar', 'personal-jesus', 'heart-of-gold', 'sangue-impazzito',
+      'creep', 'karma-police', 'lo-chiamavano-trinita', 'toxicity', 'aerials',
+      'chop-suey', 'babe-im-gonna-leave-you', 'wasted-years'
     ]
   }
 ];
@@ -2483,6 +2730,130 @@ window.SETLISTS = [
 
 </script>
 <script>
+// tuner.js — accordatore cromatico (Web Audio API + rilevamento pitch dal microfono)
+// Zero dipendenze. Espone window.ChordTuner.
+//   ChordTuner.start(onUpdate, onError) -> avvia il microfono e il rilevamento continuo.
+//     onUpdate({ freq, note, pc, octave, cents, clarity }) ad ogni frame rilevato,
+//     onUpdate(null) quando non c'è segnale/pitch chiaro abbastanza.
+//   ChordTuner.stop()  -> ferma microfono e rilevamento.
+//   ChordTuner.isRunning() -> bool
+(function () {
+  'use strict';
+
+  var ctx = null, analyser = null, stream = null, source = null;
+  var buf = null;
+  var raf = null;
+  var running = false;
+
+  function ensureCtx() {
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return null;
+    if (!ctx) ctx = new AC();
+    if (ctx.state === 'suspended') ctx.resume();
+    return ctx;
+  }
+
+  // Autocorrelazione nel dominio del tempo: trova il periodo fondamentale del
+  // segnale e lo converte in frequenza. Ritorna { freq, clarity } o null se il
+  // segnale è troppo debole o non abbastanza periodico da fidarsi.
+  function detectPitch(samples, sampleRate) {
+    var SIZE = samples.length;
+    var rms = 0;
+    for (var i = 0; i < SIZE; i++) rms += samples[i] * samples[i];
+    rms = Math.sqrt(rms / SIZE);
+    if (rms < 0.01) return null; // silenzio / rumore di fondo
+
+    var MAX_LAG = Math.floor(SIZE / 2);
+    var corr = new Float32Array(MAX_LAG);
+    for (var lag = 0; lag < MAX_LAG; lag++) {
+      var sum = 0;
+      for (var j = 0; j < MAX_LAG; j++) sum += samples[j] * samples[j + lag];
+      corr[lag] = sum;
+    }
+    // Il primo minimo dopo lag 0 separa il picco "lag=0" dal primo picco reale.
+    var d = 0;
+    while (d < MAX_LAG - 1 && corr[d] > corr[d + 1]) d++;
+    var bestLag = -1, bestVal = -Infinity;
+    for (var k = d; k < MAX_LAG; k++) {
+      if (corr[k] > bestVal) { bestVal = corr[k]; bestLag = k; }
+    }
+    if (bestLag <= 0) return null;
+
+    // Interpolazione parabolica intorno al picco per una stima sub-campione.
+    var x0 = bestLag < 1 ? bestLag : bestLag - 1;
+    var x2 = bestLag + 1 < MAX_LAG ? bestLag + 1 : bestLag;
+    var y0 = corr[x0], y1 = corr[bestLag], y2 = corr[x2];
+    var denom = (y0 - 2 * y1 + y2);
+    var shift = denom !== 0 ? 0.5 * (y0 - y2) / denom : 0;
+    var lag = bestLag + shift;
+    if (lag <= 0) return null;
+
+    var freq = sampleRate / lag;
+    var clarity = corr[0] > 0 ? Math.max(0, Math.min(1, bestVal / corr[0])) : 0;
+    if (clarity < 0.5 || freq < 60 || freq > 1500) return null;
+    return { freq: freq, clarity: clarity };
+  }
+
+  function freqToNote(freq) {
+    var midi = 69 + 12 * Math.log(freq / 440) / Math.LN2;
+    var rounded = Math.round(midi);
+    var cents = Math.round((midi - rounded) * 100);
+    var pc = ((rounded % 12) + 12) % 12;
+    var octave = Math.floor(rounded / 12) - 1;
+    return { pc: pc, octave: octave, cents: cents, midi: rounded };
+  }
+
+  function tick(onUpdate) {
+    if (!running) return;
+    analyser.getFloatTimeDomainData(buf);
+    var r = detectPitch(buf, ctx.sampleRate);
+    if (!r) {
+      onUpdate(null);
+    } else {
+      var n = freqToNote(r.freq);
+      onUpdate({ freq: r.freq, note: n.midi, pc: n.pc, octave: n.octave, cents: n.cents, clarity: r.clarity });
+    }
+    raf = requestAnimationFrame(function () { tick(onUpdate); });
+  }
+
+  function start(onUpdate, onError) {
+    if (running) return;
+    var c = ensureCtx();
+    if (!c || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      if (onError) onError(new Error('Web Audio / microfono non supportati da questo browser.'));
+      return;
+    }
+    navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } })
+      .then(function (s) {
+        stream = s;
+        source = c.createMediaStreamSource(stream);
+        analyser = c.createAnalyser();
+        analyser.fftSize = 2048;
+        buf = new Float32Array(analyser.fftSize);
+        source.connect(analyser);
+        running = true;
+        tick(onUpdate);
+      })
+      .catch(function (err) {
+        if (onError) onError(err);
+      });
+  }
+
+  function stop() {
+    running = false;
+    if (raf) { cancelAnimationFrame(raf); raf = null; }
+    if (source) { try { source.disconnect(); } catch (e) {} source = null; }
+    if (analyser) { try { analyser.disconnect(); } catch (e) {} analyser = null; }
+    if (stream) { stream.getTracks().forEach(function (t) { t.stop(); }); stream = null; }
+  }
+
+  function isRunning() { return running; }
+
+  window.ChordTuner = { start: start, stop: stop, isRunning: isRunning };
+})();
+
+</script>
+<script>
 'use strict';
 var BASE_SONGS = (window.SONGS || []).map(cloneSong);
 var SETLISTS = window.SETLISTS || [];
@@ -2542,6 +2913,69 @@ function openRestore(){
   document.getElementById('bkmodal').classList.add('show');
 }
 function closeRestore(){ document.getElementById('bkmodal').classList.remove('show'); }
+
+/* ---- accordatore cromatico (microfono + Web Audio API) ---- */
+var TUNER_STRINGS = [
+  { name:'E2', midi:40 }, { name:'A2', midi:45 }, { name:'D3', midi:50 },
+  { name:'G3', midi:55 }, { name:'B3', midi:59 }, { name:'E4', midi:64 }
+];
+function tunerOpen(){
+  document.getElementById('tunermodal').classList.add('show');
+  tunerShow(null);
+}
+function tunerClose(){
+  document.getElementById('tunermodal').classList.remove('show');
+  if(window.ChordTuner && ChordTuner.isRunning()) tunerToggle();
+}
+function tunerToggle(){
+  var btn = document.getElementById('tuner-toggle'), msg = document.getElementById('tuner-msg');
+  if(!window.ChordTuner) return;
+  if(ChordTuner.isRunning()){
+    ChordTuner.stop();
+    btn.textContent = '🎤 Avvia microfono'; btn.classList.remove('danger');
+    msg.textContent = '';
+    tunerShow(null);
+    return;
+  }
+  msg.textContent = 'Richiesta permesso microfono…';
+  ChordTuner.start(tunerShow, function(err){
+    msg.textContent = 'Microfono non disponibile: '+((err&&err.message)||'permesso negato.');
+    btn.textContent = '🎤 Avvia microfono'; btn.classList.remove('danger');
+  });
+  btn.textContent = '⏸ Ferma microfono'; btn.classList.add('danger');
+  msg.textContent = 'In ascolto… suona una corda o una nota.';
+}
+function tunerShow(r){
+  var noteEl = document.getElementById('tuner-note'), freqEl = document.getElementById('tuner-freq'), needle = document.getElementById('tuner-needle');
+  if(!noteEl) return;
+  if(!r){
+    noteEl.textContent = '—'; noteEl.className = 'tuner-note';
+    freqEl.innerHTML = '&nbsp;';
+    needle.style.left = '50%'; needle.style.background = 'var(--accent)';
+    tunerRenderStrings(null);
+    return;
+  }
+  var name = E.noteName(r.pc, false);
+  var label = state.italian ? E.noteToItalian(name) : name;
+  noteEl.textContent = label + r.octave;
+  var abs = Math.abs(r.cents);
+  noteEl.className = 'tuner-note' + (abs<=5 ? ' in-tune' : '');
+  freqEl.textContent = r.freq.toFixed(1)+' Hz · '+(r.cents>0?'+':'')+r.cents+' cent';
+  var pct = Math.max(-50, Math.min(50, r.cents));
+  needle.style.left = (50 + pct) + '%';
+  needle.style.background = abs<=5 ? '#5a9a6a' : (abs<=15 ? 'var(--accent)' : '#a5544f');
+  tunerRenderStrings(r.midi);
+}
+function tunerRenderStrings(midi){
+  var el = document.getElementById('tuner-strings'); if(!el) return;
+  var nearest = null, nd = Infinity;
+  if(midi!=null){
+    TUNER_STRINGS.forEach(function(s){ var d = Math.abs(midi-s.midi); if(d<nd){ nd=d; nearest=s.name; } });
+  }
+  el.innerHTML = TUNER_STRINGS.map(function(s){
+    return '<span class="tuner-string'+(s.name===nearest?' near':'')+'">'+s.name+'</span>';
+  }).join('');
+}
 function renderBackupList(){
   var list = loadBackups(), el = document.getElementById('bk-list');
   if(!list.length){ el.innerHTML = '<div class="bk-empty">Nessun backup automatico ancora. Verrà creato dopo la prima modifica.</div>'; return; }
