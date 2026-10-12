@@ -536,10 +536,25 @@ var TUNER_STRINGS = [
 function tunerOpen(){
   document.getElementById('tunermodal').classList.add('show');
   tunerShow(null);
+  // sincronizza il pulsante nel caso il microfono fosse già attivo (es. riapertura)
+  var btn = document.getElementById('tuner-toggle'), msg = document.getElementById('tuner-msg');
+  if(window.ChordTuner && ChordTuner.isRunning()){
+    btn.textContent = '⏸ Ferma microfono'; btn.classList.add('danger'); btn.disabled = false;
+    msg.textContent = 'In ascolto… suona una corda o una nota.';
+  } else {
+    btn.textContent = '🎤 Avvia microfono'; btn.classList.remove('danger'); btn.disabled = false;
+    msg.textContent = '';
+  }
 }
 function tunerClose(){
   document.getElementById('tunermodal').classList.remove('show');
-  if(window.ChordTuner && ChordTuner.isRunning()) tunerToggle();
+  // Ferma sempre esplicitamente (anche se il permesso era ancora in sospeso):
+  // ChordTuner.stop() annulla anche un avvio non ancora completato, così il
+  // microfono non resta attivo "in background" dopo la chiusura del pannello.
+  if(window.ChordTuner) ChordTuner.stop();
+  var btn = document.getElementById('tuner-toggle'), msg = document.getElementById('tuner-msg');
+  if(btn){ btn.textContent = '🎤 Avvia microfono'; btn.classList.remove('danger'); btn.disabled = false; }
+  if(msg) msg.textContent = '';
 }
 function tunerToggle(){
   var btn = document.getElementById('tuner-toggle'), msg = document.getElementById('tuner-msg');
@@ -551,9 +566,20 @@ function tunerToggle(){
     tunerShow(null);
     return;
   }
+  // ChordTuner.start() ignora richieste doppie mentre il permesso è già in
+  // sospeso (vedi tuner.js), quindi qui non serve disabilitare il pulsante.
   msg.textContent = 'Richiesta permesso microfono…';
   ChordTuner.start(tunerShow, function(err){
-    msg.textContent = 'Microfono non disponibile: '+((err&&err.message)||'permesso negato.');
+    var name = err && err.name;
+    var hint;
+    if(name === 'NotAllowedError'){
+      hint = 'permesso negato o bloccato. Se questa pagina è aperta dentro un\'anteprima integrata (iframe), il microfono può essere bloccato automaticamente: prova ad aprire l\'app in una scheda del browser a sé stante, oppure controlla le autorizzazioni del sito.';
+    } else if(name === 'NotFoundError'){
+      hint = 'nessun microfono trovato su questo dispositivo.';
+    } else {
+      hint = (err && err.message) || 'errore sconosciuto.';
+    }
+    msg.textContent = 'Microfono non disponibile: '+hint;
     btn.textContent = '🎤 Avvia microfono'; btn.classList.remove('danger');
   });
   btn.textContent = '⏸ Ferma microfono'; btn.classList.add('danger');
