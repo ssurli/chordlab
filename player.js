@@ -12,8 +12,10 @@
   var ctx = null, master = null;
   var timers = [];          // setTimeout in coda (per onStep e stop)
   var nodes = [];           // oscillatori/gain attivi (per stop immediato)
+  var metroOscs = [];       // solo gli oscillatori del metronomo (per silenziarli da soli)
   var playing = false;
   var endTimer = null;
+  var metronomeOn = false;  // stato corrente, aggiornabile anche a riproduzione in corso
 
   function ensureCtx() {
     if (!ctx) {
@@ -77,6 +79,7 @@
     osc.connect(g); g.connect(master);
     osc.start(t0); osc.stop(t0 + 0.06);
     nodes.push(osc, g);
+    metroOscs.push(osc);
   }
 
   function clearTimers() {
@@ -89,10 +92,26 @@
     clearTimers();
     nodes.forEach(function (n) { try { n.stop ? n.stop() : n.disconnect(); } catch (e) {} });
     nodes = [];
+    metroOscs = [];
     if (ctx) { try { master.disconnect(); } catch (e) {} master = ctx.createGain(); master.gain.value = 0.9; master.connect(ctx.destination); }
   }
 
   function isPlaying() { return playing; }
+
+  // Attiva/disattiva il metronomo anche a brano in corso. I click futuri sono
+  // già tutti schedulati all'avvio di play(): per silenziarli subito si
+  // richiama stop() su ciascun oscillatore ancora da suonare (o in corso),
+  // che con un tempo <= a quello già previsto lo zittisce immediatamente
+  // invece di aspettare la fine naturale del brano. Riattivarlo mentre si
+  // sta già suonando non reinserisce i click per il resto del brano in corso
+  // (richiede un nuovo play()): prende effetto dalla riproduzione successiva.
+  function setMetronome(on) {
+    metronomeOn = !!on;
+    if (!metronomeOn && ctx) {
+      metroOscs.forEach(function (osc) { try { osc.stop(ctx.currentTime); } catch (e) {} });
+      metroOscs = [];
+    }
+  }
 
   function play(events, opts) {
     opts = opts || {};
@@ -100,6 +119,7 @@
     stop();
     if (!events || !events.length) return;
     playing = true;
+    metronomeOn = !!opts.metronome;
 
     var bpm = Math.max(30, Math.min(280, opts.bpm || 90));
     var spb = 60 / bpm;                              // secondi per beat
@@ -114,7 +134,7 @@
       var dur = beats * spb;
       var midis = voicing(ev);
       if (midis.length) strike(midis, t, Math.max(0.12, dur * 0.98));
-      if (opts.metronome) {
+      if (metronomeOn) {
         for (var b = 0; b < Math.round(beats); b++) click(t + b * spb, b === 0);
       }
       // onStep allineato al tempo audio, via setTimeout sul wall-clock.
@@ -132,5 +152,5 @@
     }, totalMs);
   }
 
-  window.ChordPlayer = { play: play, stop: stop, isPlaying: isPlaying };
+  window.ChordPlayer = { play: play, stop: stop, isPlaying: isPlaying, setMetronome: setMetronome };
 })();

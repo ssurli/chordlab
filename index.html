@@ -880,7 +880,11 @@ function transportHTML(){
   '</div>';
 }
 function setBpm(v){ state.bpm = Math.max(40, Math.min(220, +v||90)); var el=document.getElementById('bpm-val'); if(el) el.textContent = state.bpm+' BPM'; }
-function toggleMetro(){ state.metronome = !state.metronome; refreshTransport(); }
+function toggleMetro(){
+  state.metronome = !state.metronome;
+  if(window.ChordPlayer) ChordPlayer.setMetronome(state.metronome); // silenzia subito se disattivato durante la riproduzione
+  refreshTransport();
+}
 function playToggle(){ if(window.ChordPlayer && ChordPlayer.isPlaying()){ stopPlay(); } else { playSong(); } }
 function playSong(){
   var s = songById(state.sel); if(!s || !window.ChordPlayer) return;
