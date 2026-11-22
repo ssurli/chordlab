@@ -2,10 +2,21 @@
 
 App single-page, **vanilla JS**, nessun build step. Più file JS espongono oggetti
 globali su `window`. Il file `index.html` li carica in quest'ordine:
-`engine.js` → `instruments.js` → `chordpro.js` → `crd.js` → `songs.js` →
+`engine.js` → `instruments.js` → `chordpro.js` → `crd.js` → `ireal.js` → `songs.js` →
 `player.js` → script UI inline.
 
 Tutto deve funzionare aprendo il file direttamente (`file://`), senza server.
+
+## ireal.js → `window.IrealImport`
+
+Import di link `irealb://` / `irealbook://` (incollati o dentro l'HTML di una playlist).
+Nessuna dipendenza; de-offuscamento come ireal-reader (MIT).
+
+```js
+IrealImport.looksLikeIreal(text) // -> bool: c'è almeno un link iReal?
+IrealImport.parse(text)          // -> { name: 'nome playlist' | '', songs: [song nel modello SONGS] }
+IrealImport.convertChord('C^7')  // -> 'Cmaj7' (notazione iReal -> ChordEngine)
+```
 
 ## crd.js → `window.CrdImport`
 
