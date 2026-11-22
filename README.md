@@ -25,6 +25,7 @@ schede accordi in stile *iReal Pro*: elenco accordi a misure, suddiviso per
 | `instruments.js` | `window.Instruments` | diagrammi SVG chitarra/ukulele/piano |
 | `chordpro.js` | `window.ChordPro` | import/export formato ChordPro |
 | `crd.js` | `window.CrdImport` | import fogli accordi `.crd` / testo "accordi sopra liriche" |
+| `ireal.js` | `window.IrealImport` | import link e playlist **iReal Pro** (`irealb://`) |
 | `player.js` | `window.ChordPlayer` | player audio Web Audio (riproduzione accordi) |
 | `songs.js` | `window.SONGS` + `window.SETLISTS` | libreria brani a sezioni + scalette (dati aperti) |
 | `index.html` | UI | ricerca, scalette, griglia misure, controlli, integrazione |
@@ -180,6 +181,21 @@ riproduzione si ferma.
   a righe di testo). Le righe-accordo diventano misure (le liriche sono ignorate, ChordLab è a sole
   battute); intestazioni `[Verse]`, `Chorus:`, ecc. diventano sezioni, e `Key:`/`Capo:` sono lette
   come metadati. Il formato giusto è scelto **automaticamente** in base al contenuto/estensione.
+- **iReal Pro** (`ireal.js`, nativo): due strade.
+  - *📄 Importa accordi* accetta il file **`.html`** che iReal Pro esporta per una playlist
+    (Condividi → Playlist → HTML): importa tutti i brani.
+  - *🎷 Link iReal Pro* accetta un link **`irealb://…`** incollato (Condividi → Copia link, o i
+    link della community sul forum di iReal Pro): un brano o una playlist intera.
+
+  Titolo, compositore, tonalità, metrica, stile e sezioni (A, B, Intro…) vengono letti dal link.
+  Le notazioni iReal diventano accordi normali (`^7` → `maj7`, `-` → `m`, `h` → `m7b5`,
+  `o` → `dim`). Le ripetizioni `{ }` con finali 1ª/2ª e le battute ripetute sono scritte per
+  esteso, così griglia e player suonano nell'ordine giusto. Gli accordi alternativi tra
+  parentesi sono ignorati; D.C./D.S./Coda non vengono espansi. Le durate dentro la battuta sono
+  divise in parti uguali (si correggono con *📐 Suddividi*). I brani di una playlist ricevono il
+  nome della playlist come tag, quindi li ritrovi con la ricerca. Test: `node test/ireal.test.js`.
+  ChordLab non contiene brani iReal: li importi tu dai tuoi link. iReal Pro è un prodotto di
+  Technimo LLC; ChordLab non è affiliato.
 - **Diagrammi accurati**: i diagrammi di chitarra/ukulele usano le diteggiature reali del
   database aperto [`chords-db`](https://github.com/tombatossals/chords-db) (vendorizzato in
   `vendor/chords-db.js`), con fallback all'euristica interna per accordi non presenti.

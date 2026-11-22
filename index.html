@@ -106,8 +106,8 @@ body.live .timesig{font-size:18px}
 #pop-close{position:absolute;top:4px;right:8px;color:var(--text3);cursor:pointer;font-size:16px;line-height:1}
 
 /* EDITOR */
-#lib-tools{display:flex;gap:6px;margin-top:10px}
-#lib-tools .btn{flex:1;text-align:center;font-size:11px;padding:6px 4px}
+#lib-tools{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+#lib-tools .btn{flex:1 1 calc(33% - 6px);text-align:center;font-size:11px;padding:6px 4px}
 .editor .ed-hint{font-size:11px;color:var(--text3);margin:4px 0 16px;line-height:1.5}
 .ed-meta{display:flex;flex-wrap:wrap;margin-bottom:8px}
 .editor label{display:inline-flex;flex-direction:column;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);gap:3px;margin:0 10px 10px 0}
@@ -327,7 +327,8 @@ body.paper:not(.live) .bpm-val{color:#6b6459}
     <input id="search" type="search" placeholder="Cerca brano, artista, tag…" autocomplete="off">
     <div id="lib-tools">
       <span class="btn" onclick="edNewSong()" title="Crea un nuovo brano">➕ Nuovo</span>
-      <span class="btn" onclick="document.getElementById('cp-file').click()" title="Importa file ChordPro (.cho/.pro) o foglio accordi (.crd/.txt), anche multi-brano">📄 Importa accordi</span>
+      <span class="btn" onclick="document.getElementById('cp-file').click()" title="Importa file ChordPro (.cho/.pro), foglio accordi (.crd/.txt) o playlist iReal Pro (.html), anche multi-brano">📄 Importa accordi</span>
+      <span class="btn" onclick="irealPasteLink()" title="Incolla un link iReal Pro (irealb://…): brano singolo o playlist intera">🎷 Link iReal Pro</span>
       <span class="btn" onclick="cpExportSetlist()" title="Esporta la vista corrente (scaletta o libreria) in un unico file ChordPro">⤓ Scaletta</span>
       <span class="btn" onclick="edExport()" title="Esporta le tue modifiche (JSON)">⬇︎ Esporta</span>
       <span class="btn" onclick="document.getElementById('imp-file').click()" title="Importa modifiche (JSON)">⬆︎ Importa</span>
@@ -336,7 +337,7 @@ body.paper:not(.live) .bpm-val{color:#6b6459}
     </div>
     <div id="save-status" class="save-status" title="Le modifiche sono salvate automaticamente nel browser. Usa Esporta per un backup su file."></div>
     <input id="imp-file" type="file" accept="application/json,.json" style="display:none">
-    <input id="cp-file" type="file" accept=".cho,.chordpro,.crd,.pro,.txt,text/plain" style="display:none">
+    <input id="cp-file" type="file" accept=".cho,.chordpro,.crd,.pro,.txt,.html,.htm,text/plain,text/html" style="display:none">
   </div>
   <div id="song-list"></div>
 </nav>
@@ -464,6 +465,7 @@ body.paper:not(.live) .bpm-val{color:#6b6459}
 <script src="instruments.js"></script>
 <script src="chordpro.js"></script>
 <script src="crd.js"></script>
+<script src="ireal.js"></script>
 <script src="songs.js"></script>
 <script src="player.js"></script>
 <script src="tuner.js"></script>
@@ -1551,6 +1553,12 @@ function cpImportFile(file){
       // (es. .crd o testo "accordi sopra le liriche") usiamo il parser CRD.
       var looksChordPro = /\{[^}]*\}|\[[^\]]+\]|\|/.test(txt);
       var songs, src;
+      if(window.IrealImport && IrealImport.looksLikeIreal(txt)){
+        var pl = IrealImport.parse(txt);
+        if(!pl.songs.length){ alert('Nessun brano iReal Pro leggibile nel file.'); return; }
+        importSongList(pl.songs, 'iReal Pro', pl.name);
+        return;
+      }
       if(window.CrdImport && (isCrdExt || (!looksChordPro && CrdImport.looksLikeCrd(txt)))){
         songs = [CrdImport.parse(txt)]; src = 'foglio accordi';
       } else {
@@ -1570,6 +1578,35 @@ function cpImportFile(file){
     } catch(e){ alert('File non valido o non riconosciuto.'); }
   };
   r.readAsText(file);
+}
+// Aggiunge i brani importati alla libreria utente (localStorage) e apre il primo.
+// playlist: nome della playlist iReal, aggiunto come tag per ritrovare i brani con la ricerca.
+function importSongList(songs, src, playlist){
+  var first = null;
+  var tag = playlist ? playlist.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'') : '';
+  songs.forEach(function(song){
+    song.id = edUniqueId(song.id || 'brano-importato');
+    if(tag && song.tags.indexOf(tag) < 0) song.tags.push(tag);
+    userStore[song.id] = song;
+    if(!first) first = song.id;
+  });
+  saveStore(); rebuildSongs();
+  state.setlist = ''; var sl=document.getElementById('setlist'); if(sl) sl.value='';
+  if(first) pick(first);
+  alert(songs.length>1
+    ? ('Importati '+songs.length+' brani da '+src+(playlist ? ' (playlist “'+playlist+'”: cercala con «'+tag+'»)' : '')+'.')
+    : ('Importato da '+src+': '+songs[0].title));
+}
+// Incolla un link irealb:// (da iReal Pro: Condividi → Copia link, o dal forum)
+function irealPasteLink(){
+  if(!window.IrealImport) return;
+  var txt = prompt('Incolla il link iReal Pro (inizia con irealb://):');
+  if(!txt) return;
+  if(!IrealImport.looksLikeIreal(txt)){ alert('Non sembra un link iReal Pro: deve iniziare con irealb://'); return; }
+  var pl;
+  try { pl = IrealImport.parse(txt); } catch(e){ pl = { songs: [] }; }
+  if(!pl.songs.length){ alert('Link iReal Pro non leggibile.'); return; }
+  importSongList(pl.songs, 'iReal Pro', pl.name);
 }
 function cpExportSetlist(){
   if(!window.ChordPro) return;
